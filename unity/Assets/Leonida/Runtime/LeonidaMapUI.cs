@@ -50,6 +50,7 @@ namespace Leonida
 
         void Update()
         {
+            if (LeonidaStartMenu.InputLocked) return;
             var kb = Keyboard.current;
             if (kb == null) return;
 
@@ -67,7 +68,7 @@ namespace Leonida
 
         void OnGUI()
         {
-            if (Hidden || _map == null || _cam == null) return;
+            if (Hidden || LeonidaStartMenu.InputLocked || _map == null || _cam == null) return;
 
             if (_label == null)
             {

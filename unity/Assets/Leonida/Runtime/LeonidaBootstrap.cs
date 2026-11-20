@@ -32,6 +32,12 @@ namespace Leonida
         void Awake()
         {
             _cleanMode = Array.IndexOf(Environment.GetCommandLineArgs(), "-clean") >= 0;
+            bool autoStart = Array.IndexOf(Environment.GetCommandLineArgs(), "-autostart") >= 0;
+            if (!_cleanMode && !autoStart)
+            {
+                var menu = gameObject.AddComponent<LeonidaStartMenu>();
+                menu.Init(this);
+            }
         }
         LeonidaVegetation _veg;
 
@@ -251,7 +257,7 @@ namespace Leonida
 
         void OnGUI()
         {
-            if (_cleanMode) return;
+            if (_cleanMode || LeonidaStartMenu.InputLocked) return;
             var style = new GUIStyle(GUI.skin.label)
             {
                 fontSize = 15,

@@ -68,6 +68,7 @@ namespace Leonida
 
         void Update()
         {
+            if (LeonidaStartMenu.InputLocked) return;
             var kb = Keyboard.current;
             if (kb == null) return;
 

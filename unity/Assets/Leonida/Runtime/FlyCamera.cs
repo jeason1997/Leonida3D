@@ -29,6 +29,7 @@ namespace Leonida
 
         void Update()
         {
+            if (LeonidaStartMenu.InputLocked) return;
             var kb = Keyboard.current;
             var mouse = Mouse.current;
 
