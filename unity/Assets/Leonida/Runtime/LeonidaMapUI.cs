@@ -107,6 +107,7 @@ namespace Leonida
 
         void DrawRadar(Rect rect)
         {
+            if (Event.current != null && Event.current.type != EventType.Repaint) return;
             Vector3 p = _cam.transform.position;
             float camNorth = -p.z;
             Vector3 fwd = _cam.transform.forward;
@@ -134,6 +135,9 @@ namespace Leonida
             float cx = w * 0.5f, cy = h * 0.62f;
             float sin = Mathf.Sin(heading), cos = Mathf.Cos(heading);
             float mapW = Mathf.Max(1f, _x1 - _x0), mapH = Mathf.Max(1f, _y1 - _y0);
+            float C = _manifest != null ? _manifest.chunk : 2048f;
+            float west = _manifest != null ? _manifest.west : _x0;
+            float north = _manifest != null ? _manifest.north : _y1;
 
             for (int y = 0; y < h; y++)
             {
@@ -143,14 +147,26 @@ namespace Leonida
                     float dx = x - cx;
                     // screen up = camera forward; right = camera right
                     float east = dx * cos - dy * sin;
-                    float north = -dx * sin - dy * cos;
+                    float northM = -dx * sin - dy * cos;
                     float mapX = p.x + east * mpp;
-                    float mapNorth = camNorth + north * mpp;
+                    float mapNorth = camNorth + northM * mpp;
                     float u = (mapX - _x0) / mapW;
                     float v = (mapNorth - _y0) / mapH;
-                    _radarPixels[y * w + x] = (u < 0f || u > 1f || v < 0f || v > 1f)
-                        ? water
-                        : (Color32)_map.GetPixelBilinear(u, v);
+                    if (u < 0f || u > 1f || v < 0f || v > 1f)
+                    {
+                        _radarPixels[y * w + x] = water;
+                        continue;
+                    }
+
+                    int ti = Mathf.FloorToInt((mapX - west) / C);
+                    int tj = Mathf.FloorToInt((north - mapNorth) / C);
+                    if (_tiles.TryGetValue($"{ti}_{tj}", out var tile) && tile != null)
+                    {
+                        float tu = (mapX - (west + ti * C)) / C;
+                        float tv = (mapNorth - (north - (tj + 1) * C)) / C;
+                        _radarPixels[y * w + x] = tile.GetPixelBilinear(tu, tv);
+                    }
+                    else _radarPixels[y * w + x] = water;
                 }
             }
 

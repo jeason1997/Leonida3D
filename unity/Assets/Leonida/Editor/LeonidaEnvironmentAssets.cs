@@ -11,6 +11,8 @@ namespace Leonida.EditorTools
             System.IO.Directory.CreateDirectory("Assets/Leonida/Resources");
             FixTexture("Assets/Leonida/Resources/Height16.png", false);
             FixTexture("Assets/Leonida/Resources/MapFull.png", true);
+            foreach (string file in System.IO.Directory.GetFiles("Assets/Leonida/Resources/Minimap", "*.png"))
+                FixTexture(file.Replace("\\", "/"), true);
             FixTexture("Assets/Leonida/Resources/AOAtlas.png", false);
 
             var skyShader = Shader.Find("Leonida/Sky");
