@@ -87,8 +87,8 @@ Shader "Leonida/Facade"
                 float seed = frac(i.uvS.x);
                 float style = floor(i.uvS.x);
 
-                float floorH = max(_FloorHeight, 1.0);
-                float bayW = max(_BayWidth, 1.0);
+                float floorH = lerp(3.0, 4.0, frac(seed * 5.3));
+                float bayW = lerp(2.6, 4.2, frac(seed * 9.7));
                 float2 cell = float2(u / bayW, z / floorH);
                 float2 f = frac(cell);
 
@@ -97,20 +97,39 @@ Shader "Leonida/Facade"
                 float frame = step(0.16, f.x) * (1.0 - step(0.84, f.x))
                             * step(0.24, f.y) * (1.0 - step(0.86, f.y)) - win;
 
-                float3 baseCol = _BaseColor.rgb * (0.88 + 0.18 * frac(seed * 13.17));
-                float3 glassCol = _GlassColor.rgb * (0.75 + 0.35 * frac(seed * 31.7));
+                // Palette inspired by the web facade styles: whites, pastels, earth,
+                // grey office and pale industrial metal.
+                float3 cWhite = float3(0.92, 0.90, 0.85);
+                float3 cPastel = lerp(float3(0.94, 0.74, 0.74), float3(0.68, 0.86, 0.91), frac(seed * 17.0));
+                float3 cEarth = lerp(float3(0.84, 0.75, 0.59), float3(0.91, 0.87, 0.76), frac(seed * 23.0));
+                float3 cGrey = lerp(float3(0.62, 0.63, 0.62), float3(0.78, 0.77, 0.72), frac(seed * 31.0));
+                float3 cMetal = lerp(float3(0.70, 0.75, 0.72), float3(0.82, 0.82, 0.78), frac(seed * 11.0));
 
+                float3 baseCol = cWhite;
+                if (style < 0.5) baseCol = lerp(cWhite, float3(0.78, 0.84, 0.89), 0.45);
+                else if (style < 1.5) baseCol = cPastel;
+                else if (style < 2.5) baseCol = lerp(cPastel, cEarth, 0.35);
+                else if (style < 3.5) baseCol = cEarth;
+                else if (style < 4.5) baseCol = cGrey;
+                else baseCol = cMetal;
+                baseCol *= 0.90 + 0.16 * frac(seed * 7.0);
+                baseCol = lerp(baseCol, _BaseColor.rgb, 0.35);
+
+                float3 glassCol = lerp(float3(0.08, 0.15, 0.20), float3(0.18, 0.26, 0.30), frac(seed * 31.7));
                 float3 albedo = baseCol;
-                albedo = lerp(albedo, float3(0.82, 0.82, 0.80), saturate(frame));
+                albedo = lerp(albedo, float3(0.84, 0.84, 0.82), saturate(frame));
                 albedo = lerp(albedo, glassCol, saturate(win));
 
                 // ground-floor shopfront / darker base
                 float lobby = 1.0 - smoothstep(3.8, 4.6, z);
                 albedo = lerp(albedo, baseCol * 0.55, lobby * 0.55);
 
-                // simplistic style variation: style 0 is glassier; style 4/5 lighter bands
-                if (style >= 0.5 && style < 1.5) albedo = lerp(albedo, albedo * 1.10, win);
-                else if (style >= 3.5) albedo = lerp(albedo, baseCol * 1.08, saturate(win));
+                // balcony/slab band for residential styles
+                if (style >= 0.5 && style < 2.5)
+                {
+                    float band = step(0.80, f.y) * (1.0 - step(0.92, f.y));
+                    albedo = lerp(albedo, baseCol * 1.08, band * 0.6);
+                }
 
                 float3 N = normalize(i.normalWS);
                 float4 shadowCoord = TransformWorldToShadowCoord(i.positionWS);

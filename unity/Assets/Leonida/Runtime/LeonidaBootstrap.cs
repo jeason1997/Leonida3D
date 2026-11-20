@@ -121,7 +121,7 @@ namespace Leonida
 
             var terrain = gameObject.AddComponent<LeonidaTerrain>();
             terrain.Build(Manifest, _assetsRoot);
-            terrain.BuildNear(Manifest, _assetsRoot, ci, cj, 1);
+            terrain.BuildNear(Manifest, _assetsRoot, ci, cj, 2);
 
             Status = $"loading chunks around {ci}_{cj}";
 

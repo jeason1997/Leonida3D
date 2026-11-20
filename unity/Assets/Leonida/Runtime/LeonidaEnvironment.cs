@@ -15,8 +15,8 @@ namespace Leonida
 
         public void Init(Camera cam, Light sun)
         {
-            var sky = Resources.Load<Material>("ProceduralSky");
-            if (sky == null) sky = Resources.Load<Material>("LeonidaSky");
+            var sky = Resources.Load<Material>("LeonidaSky");
+            if (sky == null) sky = Resources.Load<Material>("ProceduralSky");
             if (sky == null)
             {
                 Debug.LogWarning("Leonida: sky material missing");
