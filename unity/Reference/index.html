@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Leonida 3D</title>
+<link rel="icon" href="icon.ico" sizes="any">
+<style>
+  :root {
+    --panel: rgba(10, 12, 20, 0.9);
+    --dim: rgba(0, 0, 0, 0.55);
+    --text: #e9eef6;
+    --muted: #aeb8c8;
+    --label: #8cbfff;
+    --btn: #2a2f3a;
+    --btn-hi: #2f6fd1;
+    --btn-border: #3b4252;
+    --warn: #ffcc66;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --panel: rgba(10, 12, 20, 0.9); } }
+  :root[data-theme="dark"] { --panel: rgba(10, 12, 20, 0.9); }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0d12; color: var(--text);
+    font: 14px/1.35 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  canvas { display: block; }
+  .hidden { display: none !important; }
+  #hud { position: fixed; left: 16px; top: 12px; color: #fff; opacity: .9; text-shadow: 1px 1px 2px #000; font-size: 13px;
+    pointer-events: none; white-space: pre; }
+  #loading { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--panel); padding: 8px 14px;
+    border-radius: 8px; font-size: 13px; color: var(--muted); }
+  .overlay { position: fixed; inset: 0; background: var(--dim); display: flex; align-items: center; justify-content: center; }
+  .panel { background: var(--panel); border-radius: 10px; padding: 24px 28px; width: min(400px, calc(100vw - 32px));
+    box-sizing: border-box; max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overflow: auto;
+    overscroll-behavior: contain; }
+  #admin { position: fixed; left: 16px; top: 44px; width: min(340px, calc(100vw - 32px)); max-height: calc(100vh - 60px);
+    overflow: auto; padding: 16px; }
+  h1 { margin: 0; font-size: 32px; letter-spacing: .02em; }
+  h2 { margin: 0 0 4px; font-size: 18px; }
+  .sub { color: var(--muted); margin: 2px 0 14px; }
+  .label { color: var(--label); font-weight: 700; font-size: 11px; letter-spacing: .06em; margin: 14px 0 5px; }
+  .row { display: flex; gap: 3px; align-items: center; }
+  .row > button { flex: 1; }
+  button { background: var(--btn); color: var(--text); border: 1px solid var(--btn-border); border-radius: 5px;
+    padding: 6px 4px; font: 700 12px system-ui, sans-serif; cursor: pointer; }
+  button:hover { filter: brightness(1.25); }
+  button.on { background: var(--btn-hi); border-color: #5b95ff; }
+  button:disabled { opacity: .45; cursor: default; filter: none; }
+  button.big { width: 100%; padding: 11px; font-size: 18px; margin-top: 18px; background: #1f4f9c; border-color: #4b84e0; }
+  button.wide { width: 100%; margin-top: 6px; }
+  .cycle { display: flex; align-items: center; gap: 6px; }
+  .cycle span { flex: 1; text-align: center; font-weight: 700; }
+  .cycle button { flex: 0 0 34px; }
+  .note { color: var(--warn); font-size: 11px; min-height: 14px; }
+  .hint { color: var(--muted); font-size: 12px; margin-top: 14px; }
+  a.discord { display: flex; align-items: center; justify-content: center; gap: 9px; margin-top: 8px; padding: 9px;
+    border-radius: 5px; background: #5865f2; border: 1px solid #7983f5; color: #fff; font-weight: 700; font-size: 15px;
+    text-decoration: none; }
+  a.discord:hover { background: #4752c4; }
+  a.discord svg { width: 22px; height: 17px; fill: #fff; }
+  input[type=range] { width: 100%; }
+  #name { width: 100%; box-sizing: border-box; background: #151922; color: var(--text); border: 1px solid var(--btn-border);
+    border-radius: 6px; padding: 9px 10px; font: 600 16px system-ui, sans-serif; }
+  #name:focus { outline: none; border-color: #5b95ff; }
+  #name.bad { border-color: #d9534f; }
+  #clock { font-weight: 700; min-width: 48px; text-align: right; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three/build/three.module.js",
+  "three/addons/": "./vendor/three/examples/jsm/",
+  "three-mesh-bvh": "./vendor/three-mesh-bvh/index.module.js"
+} }
+</script>
+</head>
+<body>
+<div id="hud"></div>
+<div id="loading">Loading…</div>
+
+<div id="start" class="overlay">
+  <div class="panel">
+    <h1>LEONIDA</h1>
+    <div class="sub">The GTA VI community map (YANIS), in 3D — in your browser.</div>
+    <div id="name-box">
+      <div class="label">YOUR NAME</div>
+      <input id="name" type="text" maxlength="16" placeholder="What should others call you?" autocomplete="off" spellcheck="false">
+      <div class="note" id="name-note"></div>
+    </div>
+    <div class="settings"></div>
+    <button id="play" class="big">PLAY</button>
+    <a id="discord" class="discord hidden" target="_blank" rel="noopener"><svg viewBox="0 0 127 96" aria-hidden="true"><path d="M107.7 8.1A105 105 0 0 0 81.5 0a72 72 0 0 0-3.4 6.8 97.7 97.7 0 0 0-29.1 0A72 72 0 0 0 45.6 0a105.9 105.9 0 0 0-26.3 8.1C2.8 32.6-1.7 56.6.5 80.2a105.7 105.7 0 0 0 32.2 16.2 77.7 77.7 0 0 0 6.9-11.1 68.4 68.4 0 0 1-10.8-5.2l2.7-2a75.6 75.6 0 0 0 64.3 0l2.7 2a68.7 68.7 0 0 1-10.9 5.2 77 77 0 0 0 6.9 11.1 105.3 105.3 0 0 0 32.2-16.2c2.6-27.4-4.5-51.2-18.9-72.1ZM42.5 65.7c-6.3 0-11.4-5.7-11.4-12.8s5-12.8 11.4-12.8 11.5 5.8 11.4 12.8-5 12.8-11.4 12.8Zm42.2 0c-6.3 0-11.4-5.7-11.4-12.8s5-12.8 11.4-12.8 11.5 5.8 11.4 12.8-5 12.8-11.4 12.8Z"/></svg>JOIN THE DISCORD</a>
+    <div class="hint" id="start-hint">You start flying. P opens the admin panel: fly, walk (F or click: punch), drive (a normal car or the Bugatti: B) or fly a plane, time of day, teleports, and these
+      settings. M opens the map. Click the view to steer with the mouse; Esc frees the cursor.</div>  </div>
+</div>
+
+<script>
+  // Discord invite for the JOIN THE DISCORD button under PLAY (empty: no button)
+  const DISCORD_INVITE = 'https://discord.gg/Tjy7Tghm96';
+  if (DISCORD_INVITE) { const a = document.getElementById('discord'); a.href = DISCORD_INVITE; a.classList.remove('hidden'); }
+</script>
+
+<div id="admin" class="panel hidden">
+  <h2>ADMIN PANEL</h2>
+  <div class="label">MODE</div>
+  <div class="row" id="modes">
+    <button data-mode="fly">Fly</button><button data-mode="walk">Walk</button><button data-mode="drive">Drive</button><button data-mode="plane">Plane</button>
+  </div>
+  <div id="cars">
+    <div class="label">CAR (B: Bugatti)</div>
+    <div class="row"><button data-car="car">Normal car</button><button data-car="bugatti">Bugatti</button></div>
+  </div>
+  <div id="devcars" class="hidden">
+    <div class="label">DEV CAR (only you · N)</div>
+    <div class="row"><button data-car="concept">Concept car</button></div>
+  </div>
+  <div class="label">TIME OF DAY</div>
+  <div class="row"><input id="time" type="range" min="0" max="24" step="0.05"><span id="clock"></span></div>
+  <div class="label">TELEPORT (as Fly)</div>
+  <div id="teleports"></div>
+  <div class="settings"></div>
+  <button id="invert" class="wide">Invert mouse Y: off</button>
+  <button id="close" class="wide">Close (P)</button>
+  <div class="hint">Dev car: "Car Concept" by Eric Chadwick (Darmstadt Graphics Group), from a public-domain model by
+    Unity Fan · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> · logos removed</div>
+</div>
+
+<script>window.LEONIDA_OFFLINE = true;</script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

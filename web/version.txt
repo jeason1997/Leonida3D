@@ -1,0 +1,8 @@
+Leonida 3D offline build
+source: https://leonidastate3d.com/
+mirrored: 2026-11-20
+assets: 477 files, 226.4 MiB (site/assets)
+launcher: PyInstaller onefile, 9.5 MB
+runtime: Microsoft Edge app window, local HTTP server on 127.0.0.1
+profile: %LOCALAPPDATA%\Leonida3D\profile
+log: %LOCALAPPDATA%\Leonida3D\launcher.log

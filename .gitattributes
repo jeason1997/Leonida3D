@@ -1,0 +1,17 @@
+* text=auto
+
+# binary game assets (never let Git normalise or diff these)
+*.glb binary
+*.gltf binary
+*.bin binary
+*.webp binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.exe binary
+*.dll binary
+*.zip binary
+*.7z binary
+*.mp3 binary
+*.ogg binary
