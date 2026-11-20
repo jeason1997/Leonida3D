@@ -15,6 +15,7 @@ namespace Leonida
         FlyCamera _fly;
         float _yaw, _pitch, _lookSens = 0.11f;
         float _carSpeed, _carYaw = 180f;
+        float _walkY, _walkVy;
         Vector3 _carPos, _planePos;
         float _planeSpeed = 85f, _planePitch;
         GameObject _car, _plane;
@@ -32,6 +33,7 @@ namespace Leonida
             cam = camera;
             terrain = t;
             _fly = cam.GetComponent<FlyCamera>();
+            if (_fly != null) _fly.terrain = t;
             SetMode(Mode.Fly);
 
             var args = System.Environment.GetCommandLineArgs();
@@ -56,6 +58,12 @@ namespace Leonida
             if (_car != null) _car.SetActive(m == Mode.Drive);
             if (_plane != null) _plane.SetActive(m == Mode.Plane);
 
+            if (m == Mode.Walk)
+            {
+                _walkY = Ground(cam.transform.position.x, -cam.transform.position.z) + 0.05f;
+                _walkVy = 0f;
+                _pitch = 0f;
+            }
             if (m == Mode.Walk || m == Mode.Drive || m == Mode.Plane)
             {
                 Vector3 e = cam.transform.eulerAngles;
@@ -106,32 +114,42 @@ namespace Leonida
         void Walk(Keyboard kb)
         {
             Vector3 p = cam.transform.position;
-            float ground = Ground(p.x, -p.z);
-            p.y = ground + 1.7f;
-
+            p.x = p.x; p.z = p.z;
             Vector3 fwd = Quaternion.Euler(0f, _yaw, 0f) * Vector3.forward;
             Vector3 right = Quaternion.Euler(0f, _yaw, 0f) * Vector3.right;
             Vector3 dir = Vector3.zero;
-            if (kb.wKey.isPressed) dir += fwd;
-            if (kb.sKey.isPressed) dir -= fwd;
-            if (kb.dKey.isPressed) dir += right;
-            if (kb.aKey.isPressed) dir -= right;
-            float speed = kb.leftShiftKey.isPressed ? 14f : 5.2f;
-            if (dir.sqrMagnitude > 0.001f) p += dir.normalized * speed * Time.deltaTime;
-            p.y = Ground(p.x, -p.z) + 1.7f;
+            if (kb.wKey.isPressed || kb.upArrowKey.isPressed) dir += fwd;
+            if (kb.sKey.isPressed || kb.downArrowKey.isPressed) dir -= fwd;
+            if (kb.dKey.isPressed || kb.rightArrowKey.isPressed) dir += right;
+            if (kb.aKey.isPressed || kb.leftArrowKey.isPressed) dir -= right;
+            if (dir.sqrMagnitude > 1f) dir.Normalize();
+            float speed = kb.leftShiftKey.isPressed ? 9f : 4.5f;
+            Vector3 next = new Vector3(p.x, _walkY, p.z) + dir * (speed * Time.deltaTime);
 
-            cam.transform.position = p;
+            float ground = Ground(next.x, -next.z);
+            _walkVy -= 9.81f * Time.deltaTime;
+            _walkY += _walkVy * Time.deltaTime;
+            if (_walkY <= ground) { _walkY = ground; _walkVy = 0f; }
+            if (_walkY <= ground + 0.05f && kb.spaceKey.isPressed) _walkVy = 5.2f;
+
+            cam.transform.position = new Vector3(next.x, _walkY + 1.65f, next.z);
             cam.transform.rotation = Quaternion.Euler(_pitch, _yaw, 0f);
         }
 
         void Drive(Keyboard kb)
         {
-            float throttle = (kb.wKey.isPressed ? 1f : 0f) - (kb.sKey.isPressed ? 1f : 0f);
-            float steer = (kb.dKey.isPressed ? 1f : 0f) - (kb.aKey.isPressed ? 1f : 0f);
-            _carSpeed += throttle * 18f * Time.deltaTime;
-            _carSpeed -= _carSpeed * 0.55f * Time.deltaTime;
-            _carSpeed = Mathf.Clamp(_carSpeed, -10f, 38f);
-            _carYaw += steer * (14f + Mathf.Abs(_carSpeed) * 0.55f) * Time.deltaTime * Mathf.Sign(_carSpeed + 0.01f);
+            float throttle = kb.wKey.isPressed ? 1f : 0f;
+            float brake = kb.sKey.isPressed ? 1f : 0f;
+            float steer = (kb.aKey.isPressed ? 1f : 0f) - (kb.dKey.isPressed ? 1f : 0f);
+            bool handbrake = kb.spaceKey.isPressed;
+
+            if (throttle > 0f) _carSpeed += (_carSpeed < 0f ? 18f : 12f) * throttle * Time.deltaTime;
+            if (brake > 0f) _carSpeed -= (_carSpeed > 0f ? 25f : 6f) * brake * Time.deltaTime;
+            if (handbrake) _carSpeed *= Mathf.Exp(-2.5f * Time.deltaTime);
+            if (throttle == 0f && brake == 0f) _carSpeed *= Mathf.Exp(-0.35f * Time.deltaTime);
+            _carSpeed = Mathf.Clamp(_carSpeed, -12f, 60f);
+            float turn = steer * Mathf.Min(Mathf.Abs(_carSpeed) / 6f, 1f) * (0.9f - 0.5f * Mathf.Min(Mathf.Abs(_carSpeed) / 60f, 1f));
+            _carYaw -= turn * Mathf.Sign(_carSpeed + 0.001f) * Mathf.Rad2Deg * Time.deltaTime;
 
             Vector3 fwd = Quaternion.Euler(0f, _carYaw, 0f) * Vector3.forward;
             Vector3 p = _carPos + fwd * _carSpeed * Time.deltaTime;
