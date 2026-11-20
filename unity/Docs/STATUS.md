@@ -1,6 +1,6 @@
 # Unity port status
 
-Last updated after commit `482cd93`.
+Last updated after commit `edad28f`.
 
 ## Verified by build only
 
@@ -18,7 +18,8 @@ Do not call these finished until a real run confirms them.
 
 ## Known open issues
 
-- minimap rotation/centering needs a real screenshot check
+- minimap rotates again; group clipping was added, still needs a real screenshot check
+- mouse yaw sign corrected to Unity camera basis (`edad28f`), still needs a real feel check
 - car can spawn inside a building when switching from fly at altitude
 - plane/walk/car feel still needs comparison against `Reference/js/player.js`
 - start screen bottom control line overlaps the debug HUD text
@@ -29,7 +30,7 @@ Do not call these finished until a real run confirms them.
 ## Render state
 
 - facade: full `materials.js` port, facade height/clip fixed
-- roof: `ROOF_FRAG_COLOR` kinds 0–4
+- roof: `ROOF_FRAG_COLOR` kinds 0鈥?
 - sky: `Sky.js` Preetham + `SKY_CLOUDS`
 - detail: `DETAIL_FRAG_COLOR`
 - AO: `ao_*.webp` atlas applied to facade/roof/detail
