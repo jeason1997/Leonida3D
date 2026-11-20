@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -16,6 +17,7 @@ namespace Leonida
         float _radarMeters = 1600f;
         bool _mapOpen;
         public bool Hidden;
+        readonly Dictionary<string, Texture2D> _tiles = new Dictionary<string, Texture2D>();
         public void SetOpen(bool open) { _mapOpen = open; }
         GUIStyle _label;
         GUIStyle _title;
@@ -25,6 +27,15 @@ namespace Leonida
             _cam = cam;
             _manifest = manifest;
             _map = Resources.Load<Texture2D>("MapFull");
+            _tiles.Clear();
+            if (manifest != null && manifest.minimap != null && manifest.minimap.tiles != null)
+            {
+                foreach (string key in manifest.minimap.tiles)
+                {
+                    var tex = Resources.Load<Texture2D>($"Minimap/mm_{key}");
+                    if (tex != null) _tiles[key] = tex;
+                }
+            }
             if (_map == null)
             {
                 Debug.LogWarning("Leonida: Resources/MapFull.png missing");
@@ -85,34 +96,63 @@ namespace Leonida
             if (_mapOpen) DrawFullMap();
             else DrawHint();
         }
-
         void DrawRadar(Rect rect)
         {
-            GUI.color = new Color(0f, 0f, 0f, 0.55f);
-            GUI.DrawTexture(new Rect(rect.x - 3f, rect.y - 3f, rect.width + 6f, rect.height + 6f), Texture2D.whiteTexture);
+            GUI.color = new Color(0.05f, 0.12f, 0.18f, 0.95f);
+            GUI.DrawTexture(rect, Texture2D.whiteTexture);
             GUI.color = Color.white;
 
             Vector3 p = _cam.transform.position;
-            float u = Mathf.InverseLerp(_x0, _x1, p.x);
-            float v = Mathf.InverseLerp(_y0, _y1, -p.z);
-            float uw = _radarMeters / Mathf.Max(1f, _x1 - _x0);
-            float uh = _radarMeters / Mathf.Max(1f, _y1 - _y0);
-            Rect uv = new Rect(u - uw * 0.5f, v - uh * 0.5f, uw, uh);
-
+            float camNorth = -p.z;
             Vector3 fwd = _cam.transform.forward;
             float heading = Mathf.Atan2(fwd.x, -fwd.z) * Mathf.Rad2Deg;
+            float mpp = Mathf.Clamp(1.6f + Mathf.Max(0f, p.y) / 110f, 1.6f, 40f);
+            float k = 1f / mpp;
+            float C = _manifest != null ? _manifest.chunk : 2048f;
+            float west = _manifest != null ? _manifest.west : _x0;
+            float north = _manifest != null ? _manifest.north : _y1;
 
-            GUIUtility.RotateAroundPivot(heading, rect.center);
-            GUI.DrawTextureWithTexCoords(rect, _map, uv, true);
-            GUIUtility.RotateAroundPivot(-heading, rect.center);
+            GUI.BeginClip(rect);
+            Vector2 c = new Vector2(rect.width * 0.5f, rect.height * 0.62f);
+            GUIUtility.RotateAroundPivot(-heading, c);
 
-            // player arrow
-            var arrow = new GUIStyle(_label) { fontSize = 22, alignment = TextAnchor.MiddleCenter };
-            GUI.Label(new Rect(rect.center.x - 14f, rect.center.y - 14f, 28f, 28f), "▲", arrow);
+            float R = Mathf.Sqrt(rect.width * rect.width + rect.height * rect.height) * mpp;
+            int i0 = Mathf.FloorToInt((p.x - R - west) / C), i1 = Mathf.FloorToInt((p.x + R - west) / C);
+            int j0 = Mathf.FloorToInt((north - (camNorth + R)) / C), j1 = Mathf.FloorToInt((north - (camNorth - R)) / C);
+            for (int i = i0; i <= i1; i++)
+            {
+                for (int j = j0; j <= j1; j++)
+                {
+                    if (!_tiles.TryGetValue($"{i}_{j}", out var tex) || tex == null) continue;
+                    float mx = west + i * C + C * 0.5f;
+                    float mn = north - j * C - C * 0.5f;
+                    float sx = c.x + (mx - p.x) * k;
+                    float sy = c.y - (mn - camNorth) * k;
+                    GUI.DrawTexture(new Rect(sx - C * k * 0.5f, sy - C * k * 0.5f, C * k, C * k), tex, ScaleMode.StretchToFill, false);
+                }
+            }
 
-            // N marker
-            var n = new GUIStyle(_label) { fontSize = 13, alignment = TextAnchor.MiddleCenter };
-            GUI.Label(new Rect(rect.x + 6f, rect.y + 4f, 30f, 22f), "N", n);
+            var arrow = new GUIStyle(_label) { fontSize = 20, alignment = TextAnchor.MiddleCenter };
+            GUIUtility.RotateAroundPivot(heading, c);
+            GUI.EndClip();
+
+            // The player arrow and N marker must stay screen-aligned, not rotate with the map.
+            float cx = rect.x + rect.width * 0.5f;
+            float cy = rect.y + rect.height * 0.62f;
+            GUI.Label(new Rect(cx - 14f, cy - 14f, 28f, 28f), "▲", arrow);
+
+            float rad = heading * Mathf.Deg2Rad;
+            float nx = Mathf.Sin(-rad), ny = -Mathf.Cos(-rad);
+            float sx2 = nx > 0f ? (rect.width - 14f - cx + rect.x) / nx : nx < 0f ? (14f - cx + rect.x) / nx : float.PositiveInfinity;
+            float sy2 = ny > 0f ? (rect.height - 14f - cy + rect.y) / ny : ny < 0f ? (14f - cy + rect.y) / ny : float.PositiveInfinity;
+            float rim = Mathf.Min(sx2, sy2);
+            var nstyle = new GUIStyle(_label) { fontSize = 13, alignment = TextAnchor.MiddleCenter };
+            GUI.Label(new Rect(cx + nx * rim - 10f, cy + ny * rim - 10f, 20f, 20f), "N", nstyle);
+
+            GUI.color = new Color(0f, 0f, 0f, 0.55f);
+            GUI.DrawTexture(new Rect(rect.x - 3f, rect.y - 3f, 3f, rect.height + 6f), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(rect.xMax, rect.y - 3f, 3f, rect.height + 6f), Texture2D.whiteTexture);
+            GUI.color = Color.white;
         }
 
         void DrawFullMap()
@@ -128,9 +168,6 @@ namespace Leonida
             float mh = _map.height * scale;
             Rect r = new Rect((Screen.width - mw) * 0.5f, (Screen.height - mh) * 0.5f, mw, mh);
             GUI.DrawTexture(r, _map, ScaleMode.StretchToFill, true);
-            GUI.color = new Color(0f, 0f, 0f, 0.8f);
-            GUI.DrawTexture(new Rect(r.x - 2f, r.y - 2f, r.width + 4f, 2f), Texture2D.whiteTexture);
-            GUI.color = Color.white;
 
             GUI.Label(new Rect(28f, 20f, 600f, 40f), "LEONIDA  ·  MAP", _title);
             GUI.Label(new Rect(28f, Screen.height - 40f, 900f, 24f), "M / Esc: close    1-7: teleport", _label);
