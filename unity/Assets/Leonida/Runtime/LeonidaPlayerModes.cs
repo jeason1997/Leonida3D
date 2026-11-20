@@ -10,6 +10,7 @@ namespace Leonida
 
         public Camera cam;
         public LeonidaTerrain terrain;
+        public LeonidaManifest manifest;
         public Mode mode = Mode.Fly;
 
         FlyCamera _fly;
@@ -28,10 +29,11 @@ namespace Leonida
             _ => "FLY"
         };
 
-        public void Init(Camera camera, LeonidaTerrain t)
+        public void Init(Camera camera, LeonidaTerrain t, LeonidaManifest m = null)
         {
             cam = camera;
             terrain = t;
+            manifest = m;
             _fly = cam.GetComponent<FlyCamera>();
             if (_fly != null) _fly.terrain = t;
             SetMode(Mode.Fly);
@@ -40,10 +42,10 @@ namespace Leonida
             int mi = System.Array.IndexOf(args, "-mode");
             if (mi >= 0 && mi + 1 < args.Length)
             {
-                string m = args[mi + 1].ToLowerInvariant();
-                if (m == "walk") SetMode(Mode.Walk);
-                else if (m == "drive") SetMode(Mode.Drive);
-                else if (m == "plane") SetMode(Mode.Plane);
+                string modeArg = args[mi + 1].ToLowerInvariant();
+                if (modeArg == "walk") SetMode(Mode.Walk);
+                else if (modeArg == "drive") SetMode(Mode.Drive);
+                else if (modeArg == "plane") SetMode(Mode.Plane);
             }
         }
 
@@ -70,7 +72,19 @@ namespace Leonida
                 _pitch = e.x > 180f ? e.x - 360f : e.x;
                 _yaw = e.y;
             }
-            if (m == Mode.Drive) { _carYaw = _yaw; _carPos = cam.transform.position; _carPos.y = Ground(_carPos.x, -_carPos.z) + 0.55f; }
+            if (m == Mode.Drive)
+            {
+                _carYaw = _yaw;
+                Vector3 from = cam.transform.position;
+                float g = Ground(from.x, -from.z);
+                if (from.y > g + 30f && manifest != null && manifest.teleports != null && manifest.teleports.Count > 3)
+                {
+                    var t = manifest.teleports[3]; // Vice Beach, open road
+                    from = new Vector3(t.x, t.z, -t.y);
+                }
+                _carPos = from;
+                _carPos.y = Ground(_carPos.x, -_carPos.z) + 0.55f;
+            }
             if (m == Mode.Plane)
             {
                 _planePitch = 0f; _planeYaw = _yaw; _planeRoll = 0f; _planeThrottle = 0.65f; _planeSink = 0f;

@@ -40,6 +40,7 @@ namespace Leonida
             }
         }
         LeonidaVegetation _veg;
+        LeonidaMapUI _mapUi;
 
         async void Start()
         {
@@ -131,7 +132,7 @@ namespace Leonida
             terrain.Build(Manifest, _assetsRoot);
             terrain.BuildNear(Manifest, _assetsRoot, ci, cj, 2);
             var modes = cam.gameObject.AddComponent<LeonidaPlayerModes>();
-            modes.Init(cam, terrain);
+            modes.Init(cam, terrain, Manifest);
 
             var admin = gameObject.AddComponent<LeonidaAdminPanel>();
             admin.Init(cam, Manifest, modes);
@@ -261,7 +262,7 @@ namespace Leonida
 
         void OnGUI()
         {
-            if (_cleanMode || LeonidaStartMenu.InputLocked) return;
+            if (_cleanMode || LeonidaStartMenu.InputLocked || (_mapUi != null && _mapUi.IsOpen)) return;
             var style = new GUIStyle(GUI.skin.label)
             {
                 fontSize = 15,
