@@ -44,7 +44,8 @@ namespace Leonida
 
         async void Start()
         {
-            Application.targetFrameRate = 120;
+            Application.targetFrameRate = 60;
+            QualitySettings.vSyncCount = 1;
             try
             {
                 await LoadAsync();
@@ -105,7 +106,8 @@ namespace Leonida
                 sun.shadows = LightShadows.Soft;
                 sun.shadowStrength = 0.8f;
             }
-            QualitySettings.shadowDistance = 3000f;
+            QualitySettings.shadowDistance = 600f;
+            QualitySettings.shadowCascades = 2;
 
             RenderSettings.ambientMode = AmbientMode.Flat;
             RenderSettings.ambientLight = new Color(0.55f, 0.58f, 0.62f);
@@ -260,17 +262,23 @@ namespace Leonida
             if (collider != null) Destroy(collider);
         }
 
+        GUIStyle _hudStyle;
+
         void OnGUI()
         {
             if (_cleanMode || LeonidaStartMenu.InputLocked || (_mapUi != null && _mapUi.IsOpen)) return;
-            var style = new GUIStyle(GUI.skin.label)
+            if (_hudStyle == null)
             {
-                fontSize = 15,
-                fontStyle = FontStyle.Bold,
-                normal = { textColor = Ready ? Color.white : new Color(1f, 0.9f, 0.6f) },
-            };
+                _hudStyle = new GUIStyle(GUI.skin.label)
+                {
+                    fontSize = 15,
+                    fontStyle = FontStyle.Bold,
+                };
+            }
+            _hudStyle.normal.textColor = Ready ? Color.white : new Color(1f, 0.9f, 0.6f);
+            var style = _hudStyle;
             GUI.Box(new Rect(12, 12, 920, 86), GUIContent.none);
-            GUI.Label(new Rect(22, 18, 900, 24), "LEONIDA 3D 闂?Unity native port", style);
+            GUI.Label(new Rect(22, 18, 900, 24), "LEONIDA 3D / Unity native port", style);
             GUI.Label(new Rect(22, 42, 900, 22), Status, style);
             if (_veg != null)
             {
@@ -281,7 +289,7 @@ namespace Leonida
             if (Ready)
             {
                 GUI.Label(new Rect(12, Screen.height - 34, 900, 22),
-                    "WASD move   Q/E down/up   right mouse drag look   Shift boost   Ctrl slow", style);
+                    "WASD move   Q/E height   click: mouse   Shift boost   F1-F4 modes   M map   F8 admin", style);
             }
         }
     }

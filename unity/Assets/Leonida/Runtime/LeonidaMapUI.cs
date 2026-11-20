@@ -37,6 +37,11 @@ namespace Leonida
                     if (tex != null) _tiles[key] = tex;
                 }
             }
+            if (_cam != null && manifest != null)
+            {
+                _radar = gameObject.AddComponent<LeonidaRadarRenderer>();
+                _radar.Init(_cam, manifest, _tiles);
+            }
             if (_map == null)
             {
                 Debug.LogWarning("Leonida: Resources/MapFull.png missing");
@@ -72,6 +77,15 @@ namespace Leonida
             LeonidaCursor.UiOpen = _mapOpen;
             if (_mapOpen) LeonidaCursor.Unlock();
 
+            if (_radar != null && _cam != null)
+            {
+                Vector3 p = _cam.transform.position;
+                Vector3 fwd = _cam.transform.forward;
+                float headingDeg = Mathf.Atan2(fwd.x, -fwd.z) * Mathf.Rad2Deg;
+                float mpp = Mathf.Clamp(1.6f + Mathf.Max(0f, p.y) / 110f, 1.6f, 40f);
+                _radar.SetView(p, headingDeg, mpp, _radarFlip);
+            }
+
             if (kb.digit1Key.wasPressedThisFrame) Teleport(0);
             else if (kb.digit2Key.wasPressedThisFrame) Teleport(1);
             else if (kb.digit3Key.wasPressedThisFrame) Teleport(2);
@@ -90,6 +104,11 @@ namespace Leonida
                 _label = new GUIStyle(GUI.skin.label) { fontSize = 14, fontStyle = FontStyle.Bold };
                 _label.normal.textColor = Color.white;
                 _title = new GUIStyle(_label) { fontSize = 26 };
+                _arrowStyle = new GUIStyle(_label) { fontSize = 20, alignment = TextAnchor.MiddleCenter };
+                _nStyle = new GUIStyle(_label) { fontSize = 13, alignment = TextAnchor.MiddleCenter };
+                _wStyle = new GUIStyle(_label) { fontSize = 18, alignment = TextAnchor.MiddleCenter };
+                _hintStyle = new GUIStyle(_label) { fontSize = 13 };
+                _hintStyle.normal.textColor = new Color(1f, 1f, 1f, 0.75f);
             }
 
             float w = Mathf.Clamp(Screen.width * 0.19f, 260f, 380f);
@@ -101,6 +120,7 @@ namespace Leonida
             else DrawHint();
         }
         bool _radarFlip = true;
+        LeonidaRadarRenderer _radar;
         Vector2? _waypoint;
         Rect _mapRect;
         Texture2D _radarTex;
@@ -109,10 +129,12 @@ namespace Leonida
         float _radarLastHeading;
         int _radarLastW, _radarLastH;
         float _radarNext;
+        GUIStyle _arrowStyle, _nStyle, _wStyle, _hintStyle;
 
         void DrawRadar(Rect rect)
         {
             if (Event.current != null && Event.current.type != EventType.Repaint) return;
+            if (_radar != null) { DrawRadarGpu(rect); return; }
             Vector3 p = _cam.transform.position;
             float camNorth = -p.z;
             Vector3 fwd = _cam.transform.forward;
@@ -128,12 +150,12 @@ namespace Leonida
             }
 
             bool moved = _radarLastW != w || _radarLastH != h
-                      || (p - _radarLastPos).sqrMagnitude > 0.25f
-                      || Mathf.Abs(Mathf.DeltaAngle(_radarLastHeading, heading * Mathf.Rad2Deg)) > 0.5f;
+                      || (p - _radarLastPos).sqrMagnitude > 4f
+                      || Mathf.Abs(Mathf.DeltaAngle(_radarLastHeading, heading * Mathf.Rad2Deg)) > 2f;
             bool dirty = moved && Time.unscaledTime >= _radarNext;
             if (dirty)
             {
-                _radarNext = Time.unscaledTime + 0.08f;
+                _radarNext = Time.unscaledTime + 0.2f;
                 _radarLastPos = p;
                 _radarLastHeading = heading * Mathf.Rad2Deg;
                 _radarLastW = w; _radarLastH = h;
@@ -186,7 +208,7 @@ namespace Leonida
             // Player arrow stays up; the map image itself is already heading-up.
             float scx = rect.x + rect.width * 0.5f;
             float scy = rect.y + rect.height * 0.62f;
-            var arrow = new GUIStyle(_label) { fontSize = 20, alignment = TextAnchor.MiddleCenter };
+            var arrow = _arrowStyle;
             GUI.Label(new Rect(scx - 14f, scy - 14f, 28f, 28f), "\u25B2", arrow);
 
             // N on the rim, where north currently is.
@@ -196,7 +218,7 @@ namespace Leonida
             float sx2 = nx > 0f ? (rect.width - 12f - cw) / nx : nx < 0f ? (12f - cw) / nx : float.PositiveInfinity;
             float sy2 = ny > 0f ? (rect.height - 12f - chh) / ny : ny < 0f ? (12f - chh) / ny : float.PositiveInfinity;
             float rim = Mathf.Min(sx2, sy2);
-            var nstyle = new GUIStyle(_label) { fontSize = 13, alignment = TextAnchor.MiddleCenter };
+            var nstyle = _nStyle;
             GUI.Label(new Rect(scx + nx * rim - 10f, scy + ny * rim - 10f, 20f, 20f), "N", nstyle);
 
             if (_waypoint.HasValue)
@@ -208,11 +230,55 @@ namespace Leonida
                 float wdy = -we * Mathf.Sin(wh) - wn * Mathf.Cos(wh);
                 float wx = Mathf.Clamp(scx + wdx / mpp, rect.x + 8f, rect.xMax - 8f);
                 float wy = Mathf.Clamp(scy + wdy / mpp, rect.y + 8f, rect.yMax - 8f);
-                var wstyle = new GUIStyle(_label) { fontSize = 18, alignment = TextAnchor.MiddleCenter };
+                var wstyle = _wStyle;
                 GUI.color = new Color(1f, 0.85f, 0.2f);
                 GUI.Label(new Rect(wx - 10f, wy - 10f, 20f, 20f), "\u25C6", wstyle);
                 GUI.color = Color.white;
             }
+            GUI.color = new Color(0f, 0f, 0f, 0.55f);
+            GUI.DrawTexture(new Rect(rect.x - 3f, rect.y - 3f, rect.width + 6f, 3f), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(rect.x - 3f, rect.yMax, rect.width + 6f, 3f), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(rect.x - 3f, rect.y - 3f, 3f, rect.height + 6f), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(rect.xMax, rect.y - 3f, 3f, rect.height + 6f), Texture2D.whiteTexture);
+            GUI.color = Color.white;
+        }
+
+        void DrawRadarGpu(Rect rect)
+        {
+            if (_radar == null || _radar.Target == null) return;
+            GUI.DrawTexture(rect, _radar.Target, ScaleMode.StretchToFill, false);
+
+            Vector3 p = _cam.transform.position;
+            Vector3 fwd = _cam.transform.forward;
+            float heading = Mathf.Atan2(fwd.x, -fwd.z);
+            float mpp = Mathf.Clamp(1.6f + Mathf.Max(0f, p.y) / 110f, 1.6f, 40f);
+
+            float scx = rect.x + rect.width * 0.5f;
+            float scy = rect.y + rect.height * 0.62f;
+            var arrow = _arrowStyle;
+            GUI.Label(new Rect(scx - 14f, scy - 14f, 28f, 28f), "\u25B2", arrow);
+
+            float nx = Mathf.Sin(-heading), ny = -Mathf.Cos(-heading);
+            float cw = rect.width * 0.5f, chh = rect.height * 0.62f;
+            float sx2 = nx > 0f ? (rect.width - 12f - cw) / nx : nx < 0f ? (12f - cw) / nx : float.PositiveInfinity;
+            float sy2 = ny > 0f ? (rect.height - 12f - chh) / ny : ny < 0f ? (12f - chh) / ny : float.PositiveInfinity;
+            float rim = Mathf.Min(sx2, sy2);
+            GUI.Label(new Rect(scx + nx * rim - 10f, scy + ny * rim - 10f, 20f, 20f), "N", _nStyle);
+
+            if (_waypoint.HasValue)
+            {
+                float we = _waypoint.Value.x - p.x;
+                float wn = _waypoint.Value.y - (-p.z);
+                float wh = heading;
+                float wdx = we * Mathf.Cos(wh) - wn * Mathf.Sin(wh);
+                float wdy = -we * Mathf.Sin(wh) - wn * Mathf.Cos(wh);
+                float wx = Mathf.Clamp(scx + wdx / mpp, rect.x + 8f, rect.xMax - 8f);
+                float wy = Mathf.Clamp(scy + wdy / mpp, rect.y + 8f, rect.yMax - 8f);
+                GUI.color = new Color(1f, 0.85f, 0.2f);
+                GUI.Label(new Rect(wx - 10f, wy - 10f, 20f, 20f), "\u25C6", _wStyle);
+                GUI.color = Color.white;
+            }
+
             GUI.color = new Color(0f, 0f, 0f, 0.55f);
             GUI.DrawTexture(new Rect(rect.x - 3f, rect.y - 3f, rect.width + 6f, 3f), Texture2D.whiteTexture);
             GUI.DrawTexture(new Rect(rect.x - 3f, rect.yMax, rect.width + 6f, 3f), Texture2D.whiteTexture);
@@ -248,7 +314,7 @@ namespace Leonida
             {
                 float wx = r.x + Mathf.InverseLerp(_x0, _x1, _waypoint.Value.x) * r.width;
                 float wy = r.y + Mathf.InverseLerp(_y1, _y0, _waypoint.Value.y) * r.height;
-                var wstyle = new GUIStyle(_label) { fontSize = 20, alignment = TextAnchor.MiddleCenter };
+                var wstyle = _wStyle;
                 GUI.color = new Color(1f, 0.85f, 0.2f);
                 GUI.Label(new Rect(wx - 10f, wy - 10f, 20f, 20f), "\u25C6", wstyle);
                 GUI.color = Color.white;
@@ -270,8 +336,7 @@ namespace Leonida
 
         void DrawHint()
         {
-            var hint = new GUIStyle(_label) { fontSize = 13 };
-            hint.normal.textColor = new Color(1f, 1f, 1f, 0.75f);
+            var hint = _hintStyle;
             GUI.Label(new Rect(20f, Screen.height - 32f, 1100f, 22f),
                 "M: map    1-7: teleport    R: flip radar    WASD/QE: fly", hint);
         }
