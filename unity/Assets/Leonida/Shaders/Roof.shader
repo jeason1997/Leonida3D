@@ -1,17 +1,16 @@
-// Procedural Leonida roof: varied membrane/gravel/tar colours per building block,
-// fine grain, Lambert lighting. Keeps the aerial view from reading as one grey mass.
+// Faithful URP port of the web roof material (Reference/js/materials.js: ROOF_FRAG_COLOR).
+// Roof kinds 0..4: membrane/gravel/tar/clay tile/metal, with AC-unit specs on flat roofs.
 Shader "Leonida/Roof"
 {
     Properties
     {
-        _BaseColor ("Base Color", Color) = (0.62, 0.60, 0.55, 1)
         _Night ("Night", Range(0, 1)) = 0
     }
 
     SubShader
     {
         Tags { "RenderType"="Opaque" "RenderPipeline"="UniversalPipeline" "Queue"="Geometry" }
-        LOD 200
+        LOD 300
 
         Pass
         {
@@ -33,7 +32,6 @@ Shader "Leonida/Roof"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
-                float4 _BaseColor;
                 float _Night;
             CBUFFER_END
 
@@ -50,8 +48,8 @@ Shader "Leonida/Roof"
                 float4 positionCS : SV_POSITION;
                 float3 positionWS : TEXCOORD0;
                 float3 normalWS   : TEXCOORD1;
-                float2 uv         : TEXCOORD2;
-                float2 uv1        : TEXCOORD3;
+                float2 uvF        : TEXCOORD2;
+                float2 uvS        : TEXCOORD3;
                 float  fogFactor  : TEXCOORD4;
             };
 
@@ -62,51 +60,94 @@ Shader "Leonida/Roof"
                 o.positionCS = p.positionCS;
                 o.positionWS = p.positionWS;
                 o.normalWS = TransformObjectToWorldNormal(v.normalOS);
-                o.uv = v.uv;
-                o.uv1 = v.uv1;
+                o.uvF = v.uv;
+                o.uvS = v.uv1;
                 o.fogFactor = ComputeFogFactor(p.positionCS.z);
                 return o;
             }
 
-            float Hash21(float2 p)
+            half4 frag (Varyings input) : SV_Target
             {
-                return frac(sin(dot(p, float2(127.1, 311.7))) * 43758.5453);
-            }
+                float st = floor(input.uvS.x);
+                float seed = frac(input.uvS.x);
+                float r1 = frac(seed * 13.17);
+                float r2 = frac(seed * 71.31);
+                float r3 = frac(seed * 191.7);
+                float2 w = float2(input.uvF.x, 1.0 - input.uvF.y);
+                float aa = max(max(abs(ddx(w.x)) + abs(ddy(w.x)), abs(ddx(w.y)) + abs(ddy(w.y))), 0.004);
 
-            half4 frag (Varyings i) : SV_Target
-            {
-                float seed = frac(i.uv1.x);
-                float style = floor(i.uv1.x);
+                int kind = r1 < 0.45 ? 0 : (r1 < 0.75 ? 1 : 2);
+                if (st == 0.0 || st == 1.0) kind = r1 < 0.65 ? 0 : 1;
+                if (st == 2.0 || st == 3.0) kind = r2 < 0.4 ? 3 : (r1 < 0.6 ? 0 : 1);
+                if (st == 5.0) kind = r1 < 0.65 ? 4 : 0;
 
-                float3 tar    = lerp(float3(0.31, 0.31, 0.30), float3(0.43, 0.42, 0.39), frac(seed * 7.1));
-                float3 gravel = lerp(float3(0.62, 0.59, 0.52), float3(0.48, 0.46, 0.42), frac(seed * 13.7));
-                float3 white  = lerp(float3(0.78, 0.77, 0.72), float3(0.68, 0.67, 0.62), frac(seed * 21.3));
-                float3 tile   = lerp(float3(0.66, 0.45, 0.34), float3(0.55, 0.38, 0.30), frac(seed * 5.3));
+                float3 col;
+                float rough = 0.85;
+                float metal = 0.0;
+                float n = frac(sin(dot(floor(w * 3.0), float2(12.9898, 78.233)) + seed * 37.7) * 43758.5);
 
-                // Per-building block: 18 m cells, so roofs vary over the skyline.
-                float2 block = floor(i.positionWS.xz / 18.0);
-                float r = Hash21(block);
-                float3 c = gravel;
-                if (r < 0.28) c = tar;
-                else if (r < 0.62) c = white;
-                else if (r < 0.72) c = tile;
-                c = lerp(c, gravel, 0.25);
+                if (kind == 0)
+                {
+                    col = lerp(float3(0.86, 0.87, 0.86), float3(0.74, 0.75, 0.74), r3);
+                    float d = abs(frac(w.x / 1.8 + 0.5) - 0.5) * 1.8;
+                    col *= 1.0 - 0.12 * clamp((0.04 - d) / aa + 0.5, 0.0, 1.0);
+                    rough = 0.7;
+                }
+                else if (kind == 1)
+                {
+                    col = lerp(float3(0.60, 0.58, 0.54), float3(0.70, 0.68, 0.62), r3) * (0.9 + 0.2 * n);
+                    rough = 0.95;
+                }
+                else if (kind == 2)
+                {
+                    col = lerp(float3(0.17, 0.17, 0.18), float3(0.25, 0.24, 0.23), r3);
+                    rough = 0.7;
+                }
+                else if (kind == 3)
+                {
+                    float row = floor(w.y / 0.33);
+                    float tile = frac(sin((floor(w.x / 0.28 + row * 0.5)) * 12.9898 + row * 78.233 + seed * 37.719) * 43758.5453);
+                    col = lerp(float3(0.72, 0.36, 0.22), float3(0.80, 0.50, 0.32), tile * 0.8 + r3 * 0.2);
+                    float gap = abs(frac(w.y / 0.33) - 0.5) * 0.33;
+                    col *= 1.0 - 0.35 * clamp((0.03 - (0.165 - gap)) / aa + 0.5, 0.0, 1.0);
+                    rough = 0.75;
+                }
+                else
+                {
+                    col = lerp(float3(0.80, 0.82, 0.83), float3(0.66, 0.70, 0.72), r3);
+                    col *= 1.0 + 0.06 * sin(w.x * 6.2832 / 0.3) * clamp(1.0 - aa / 0.1, 0.0, 1.0);
+                    rough = 0.4;
+                    metal = 0.6;
+                }
 
-                // fine roof grain and drainage streaks
-                float grain = Hash21(floor(i.positionWS.xz * 0.45));
-                c *= 0.88 + 0.22 * grain;
-                float streak = Hash21(float2(floor(i.positionWS.x * 1.3), 3.0));
-                c *= 1.0 - 0.05 * streak;
+                // AC units / roof clutter: dark specks on flat roofs
+                float cell = frac(sin(dot(floor(w / 7.0), float2(41.3, 289.1)) + seed) * 9871.3);
+                float2 cf = frac(w / 7.0) - 0.5;
+                if (kind != 3 && cell > 0.8 && max(abs(cf.x), abs(cf.y)) < 0.12) col *= 0.55;
 
-                float3 N = normalize(i.normalWS);
-                float4 shadowCoord = TransformWorldToShadowCoord(i.positionWS);
-                Light mainLight = GetMainLight(shadowCoord);
-                float ndl = saturate(dot(N, mainLight.direction));
-                float shadow = max(mainLight.shadowAttenuation, 0.5);
-                float3 ambient = max(SampleSH(N), float3(0.44, 0.46, 0.50));
-                float3 lit = c * (ambient + mainLight.color * (ndl * 0.65 + 0.20) * shadow);
-                lit = MixFog(lit, i.fogFactor);
-                return half4(lit, 1.0);
+                SurfaceData surfaceData = (SurfaceData)0;
+                surfaceData.albedo = col;
+                surfaceData.specular = half3(0.0, 0.0, 0.0);
+                surfaceData.metallic = metal;
+                surfaceData.smoothness = 1.0 - saturate(rough);
+                surfaceData.normalTS = float3(0.0, 0.0, 1.0);
+                surfaceData.emission = 0.0;
+                surfaceData.occlusion = 1.0;
+                surfaceData.alpha = 1.0;
+
+                InputData inputData = (InputData)0;
+                inputData.positionWS = input.positionWS;
+                inputData.normalWS = normalize(input.normalWS);
+                inputData.viewDirectionWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
+                inputData.shadowCoord = TransformWorldToShadowCoord(input.positionWS);
+                inputData.fogCoord = input.fogFactor;
+                inputData.bakedGI = SampleSH(inputData.normalWS);
+                inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS.xy);
+                inputData.shadowMask = half4(1.0, 1.0, 1.0, 1.0);
+
+                half4 color = UniversalFragmentPBR(inputData, surfaceData);
+                color.rgb = MixFog(color.rgb, inputData.fogCoord);
+                return color;
             }
             ENDHLSL
         }
@@ -130,7 +171,6 @@ Shader "Leonida/Roof"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
-                float4 _BaseColor;
                 float _Night;
             CBUFFER_END
 
