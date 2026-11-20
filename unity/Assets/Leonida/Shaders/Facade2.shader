@@ -437,17 +437,17 @@ Shader "Leonida/Facade2"
 
                 // Deterministic world-space window grid (the imported facade UV
                 // parameters do not produce coverage in the player).
-                float2 wcell = float2(wallU / 4.0, positionWS.y / 3.6);
+                float2 wcell = float2(wallU / 7.0, positionWS.y / 4.2);
                 float2 wf = frac(wcell);
-                float winX = step(0.22, wf.x) * (1.0 - step(0.78, wf.x));
-                float winY = step(0.30, wf.y) * (1.0 - step(0.80, wf.y));
+                float winX = step(0.34, wf.x) * (1.0 - step(0.66, wf.x));
+                float winY = step(0.38, wf.y) * (1.0 - step(0.72, wf.y));
                 float win = winX * winY;
-                float frame = (step(0.16, wf.x) * (1.0 - step(0.84, wf.x))
-                             * step(0.24, wf.y) * (1.0 - step(0.86, wf.y))) - win;
+                float frame = (step(0.24, wf.x) * (1.0 - step(0.76, wf.x))
+                             * step(0.34, wf.y) * (1.0 - step(0.82, wf.y))) - win;
                 float wdist = length(_WorldSpaceCameraPos - positionWS);
-                float wfade = 1.0 - smoothstep(2800.0, 6000.0, wdist);
-                albedo = lerp(albedo, float3(0.70, 0.72, 0.72), saturate(frame) * 0.5 * wfade);
-                albedo = lerp(albedo, float3(0.055, 0.11, 0.16), win * 0.88 * wfade);
+                float wfade = 1.0 - smoothstep(1500.0, 4000.0, wdist);
+                albedo = lerp(albedo, float3(0.55, 0.57, 0.57), saturate(frame) * 0.0 * wfade);
+                albedo = lerp(albedo, float3(0.09, 0.14, 0.18), win * 0.55 * wfade);
 
                 // Reference/js/materials.js WALL_AO: ground AO just outside the wall,
                 // fading out with height, plus a contact shadow at the foot.
