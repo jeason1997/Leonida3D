@@ -116,10 +116,8 @@ namespace Leonida
             float north = _manifest != null ? _manifest.north : _y1;
 
             GUI.BeginGroup(rect);
-            Matrix4x4 oldMatrix = GUI.matrix;
             Vector2 c = new Vector2(rect.width * 0.5f, rect.height * 0.62f);
-            // Rotate the map in local group space; BeginGroup provides the hard clip to the radar rect.
-            GUI.matrix = Matrix4x4.TRS(new Vector3(c.x, c.y, 0f), Quaternion.Euler(0f, 0f, -heading), Vector3.one);
+            GUIUtility.RotateAroundPivot(-heading, c);
 
             float R = Mathf.Sqrt(rect.width * rect.width + rect.height * rect.height) * mpp;
             int i0 = Mathf.FloorToInt((p.x - R - west) / C), i1 = Mathf.FloorToInt((p.x + R - west) / C);
@@ -137,7 +135,7 @@ namespace Leonida
                 }
             }
 
-            GUI.matrix = oldMatrix;
+            GUIUtility.RotateAroundPivot(heading, c);
             GUI.EndGroup();
 
             // Player arrow stays up; the map turns underneath it.
@@ -177,7 +175,7 @@ namespace Leonida
             Rect r = new Rect((Screen.width - mw) * 0.5f, (Screen.height - mh) * 0.5f, mw, mh);
             GUI.DrawTexture(r, _map, ScaleMode.StretchToFill, true);
 
-            GUI.Label(new Rect(28f, 20f, 600f, 40f), "LEONIDA  鐠? MAP", _title);
+            GUI.Label(new Rect(28f, 20f, 600f, 40f), "LEONIDA  閻? MAP", _title);
             GUI.Label(new Rect(28f, Screen.height - 40f, 900f, 24f), "M / Esc: close    1-7: teleport", _label);
 
             if (_manifest != null && _manifest.teleports != null)
