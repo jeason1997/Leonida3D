@@ -50,16 +50,18 @@ Optional test arguments for `Leonida.exe`:
 - water shader (scrolling normals, Fresnel, sun specular, fog)
 - sky shader (gradient, sun disk/glow)
 - vegetation: 21 GLB variants, `veg/inst_*.bin` parsing, instanced trees/shrubs/grass
+- roof details: `details/det_*.bin` mesh + vertex colors
+- native IMGUI minimap, full map (M), 1–7 teleports
 - 60 km ocean, directional light, shadows, fog
 - fly camera, loading HUD, scene + Windows player build pipeline
 
 ## Not yet
 
-- roof detail shader (currently URP Lit)
+- roof detail shader (currently a vertex-colour unlit material)
 - roof props `det_*.bin` and `roads/props.json`
 - baked AO texture path (`ao_*.webp`)
 - far vegetation billboards / impostor atlas
-- minimap, full map, admin panel, teleports
+- admin panel / start menu / chat
 - walk, car, plane
 - Android / iOS export
 

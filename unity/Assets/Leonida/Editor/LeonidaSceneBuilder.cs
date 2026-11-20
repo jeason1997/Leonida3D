@@ -53,7 +53,8 @@ namespace Leonida.EditorTools
             RenderSettings.fogMode = FogMode.ExponentialSquared;
             RenderSettings.fogDensity = 0.00007f;
             RenderSettings.fogColor = new Color(0.62f, 0.72f, 0.82f);
-            RenderSettings.skybox = null;
+            RenderSettings.skybox = AssetDatabase.LoadAssetAtPath<Material>("Assets/Leonida/Resources/LeonidaSky.mat");
+            if (cam != null && RenderSettings.skybox != null) cam.clearFlags = CameraClearFlags.Skybox;
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };

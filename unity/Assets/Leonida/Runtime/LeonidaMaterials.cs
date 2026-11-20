@@ -96,6 +96,27 @@ namespace Leonida
             return m;
         }
 
+        public static Material Detail()
+        {
+            const string key = "LeonidaDetail";
+            if (Cache.TryGetValue(key, out var cached)) return cached;
+
+            var shader = Shader.Find("Leonida/TerrainVertexColor");
+            Material m;
+            if (shader != null)
+            {
+                m = new Material(shader) { name = key };
+                if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", new Color(0.58f, 0.56f, 0.52f, 1f));
+            }
+            else
+            {
+                m = Lit(key, new Color(0.55f, 0.53f, 0.48f), 0.1f);
+            }
+            m.enableInstancing = true;
+            Cache[key] = m;
+            return m;
+        }
+
         public static Material For(string gltfName)
         {
             string n = gltfName ?? string.Empty;

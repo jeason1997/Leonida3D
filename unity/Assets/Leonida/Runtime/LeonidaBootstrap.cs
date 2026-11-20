@@ -80,21 +80,21 @@ namespace Leonida
                 cam.farClipPlane = 25000f;
                 cam.nearClipPlane = 0.3f;
                 cam.fieldOfView = 72f;
-                cam.clearFlags = CameraClearFlags.SolidColor;
+                cam.clearFlags = RenderSettings.skybox != null ? CameraClearFlags.Skybox : CameraClearFlags.SolidColor;
                 cam.backgroundColor = new Color(0.58f, 0.72f, 0.86f);
             }
             if (sun != null)
             {
                 sun.transform.rotation = Quaternion.Euler(48f, -35f, 0f);
                 sun.color = new Color(1f, 0.96f, 0.88f);
-                sun.intensity = 1.35f;
+                sun.intensity = 1.6f;
                 sun.shadows = LightShadows.Soft;
                 sun.shadowStrength = 0.8f;
             }
             QualitySettings.shadowDistance = 3000f;
 
             RenderSettings.ambientMode = AmbientMode.Flat;
-            RenderSettings.ambientLight = new Color(0.42f, 0.46f, 0.52f);
+            RenderSettings.ambientLight = new Color(0.55f, 0.58f, 0.62f);
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.ExponentialSquared;
             RenderSettings.fogDensity = 0.00007f;
@@ -126,6 +126,21 @@ namespace Leonida
             _chunksLoaded = chunks.Loaded;
             _chunksTotal = chunks.Total;
 
+            Status = "loading roof details";
+            string detailStatus = "details off";
+            try
+            {
+                var details = gameObject.AddComponent<LeonidaDetails>();
+                await details.LoadAsync(Manifest, _assetsRoot, ci, cj, 3,
+                    (done, total, key) => Status = $"loading roof details {done}/{total}  ({key})");
+                detailStatus = $"details {details.LoadedChunks} chunks / {details.VertexCount} verts";
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("Leonida: roof details failed: " + e);
+                detailStatus = "details failed";
+            }
+
             Status = "loading vegetation";
             string vegStatus = "veg off";
             try
@@ -145,8 +160,11 @@ namespace Leonida
             }
 
             Ready = true;
-            Status = $"READY  terrain chunks {terrain.ChunkCount}  city tiles {_chunksLoaded}/{_chunksTotal}  {vegStatus}";
+            Status = $"READY  terrain chunks {terrain.ChunkCount}  city tiles {_chunksLoaded}/{_chunksTotal}  {detailStatus}  {vegStatus}";
             Debug.Log("Leonida: " + Status);
+
+            var mapUi = gameObject.AddComponent<LeonidaMapUI>();
+            mapUi.Init(cam, Manifest);
         }
 
         void ApplyCommandLineCamera()
@@ -167,7 +185,8 @@ namespace Leonida
                 lookTarget = new Vector3(Arg("-lookx", lookTarget.x), Arg("-looky", lookTarget.y), Arg("-lookz", lookTarget.z));
         }
 
-        void CreateOcean()        {
+        void CreateOcean()
+        {
             if (GameObject.Find("Ocean") != null) return;
             var go = GameObject.CreatePrimitive(PrimitiveType.Plane);
             go.name = "Ocean";

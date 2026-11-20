@@ -17,6 +17,11 @@ namespace Leonida
 
         void Start()
         {
+            SetViewFromTransform();
+        }
+
+        public void SetViewFromTransform()
+        {
             Vector3 e = transform.eulerAngles;
             _pitch = e.x > 180f ? e.x - 360f : e.x;
             _yaw = e.y;

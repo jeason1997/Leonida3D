@@ -60,6 +60,7 @@ Or use the editor menu `Leonida > Build Scene + Windows Player` after syncing.
 - facade shader ported from the web build (six facade styles, windows, frames,
   balconies, grime, night-lit rooms), water shader, sky shader
 - vegetation: 21 GLB variants, `veg/inst_*.bin` instancing (trees / shrubs / grass)
+- roof details `details/det_*.bin`, native minimap/full map, 1–7 teleports
 - ocean, directional light, shadows, fog, fly camera, loading HUD
 - scene/player build menu
 
@@ -67,10 +68,11 @@ Or use the editor menu `Leonida > Build Scene + Windows Player` after syncing.
 
 - [x] facade / water / sky shaders
 - [x] vegetation (`veg/inst_*.bin`)
-- [ ] roof detail shader and roof props (`det_*.bin`)
+- [x] roof details (`det_*.bin`)
+- [x] native minimap / full map / teleports
 - [ ] baked AO (`ao_*.webp`)
 - [ ] far vegetation billboards / impostors
-- [ ] minimap, full map, admin panel, teleports
+- [ ] admin panel, start menu, chat
 - [ ] walk / car / plane modes
 - [ ] Android / iOS export
 
