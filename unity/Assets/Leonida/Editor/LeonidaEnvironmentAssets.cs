@@ -21,6 +21,21 @@ namespace Leonida.EditorTools
                 Debug.LogError("LEONIDA_ENV sky shader missing");
             }
 
+            // Built-in procedural skybox as a guaranteed fallback/primary sky.
+            var proc = Shader.Find("Skybox/Procedural");
+            if (proc != null && AssetDatabase.LoadAssetAtPath<Material>("Assets/Leonida/Resources/ProceduralSky.mat") == null)
+            {
+                var m = new Material(proc) { name = "ProceduralSky" };
+                m.SetFloat("_AtmosphereThickness", 0.72f);
+                m.SetColor("_SkyTint", new Color(0.42f, 0.58f, 0.82f));
+                m.SetColor("_GroundColor", new Color(0.42f, 0.42f, 0.38f));
+                m.SetFloat("_Exposure", 1.25f);
+                m.SetFloat("_SunSize", 0.035f);
+                m.SetFloat("_SunSizeConvergence", 5f);
+                m.SetFloat("_SunDisk", 2f);
+                AssetDatabase.CreateAsset(m, "Assets/Leonida/Resources/ProceduralSky.mat");
+            }
+
             var waterShader = Shader.Find("Leonida/Water");
             if (waterShader != null && AssetDatabase.LoadAssetAtPath<Material>("Assets/Leonida/Resources/Water.mat") == null)
             {

@@ -42,26 +42,27 @@ Optional test arguments for `Leonida.exe`:
 ## Implemented
 
 - manifest, 110 far-terrain chunks (464,750 vertices)
+- near terrain: 8 m tiles with the web build's `color_*.jpg` aerial textures
 - glTFast runtime loading of GLB city tiles, with the glTF→Unity X mirror corrected
 - material mapping by mesh/primitive: walls, roofs, roads, sidewalks, water
-- full facade shader port (six styles: curtain wall, apartment/balconies, Deco,
-  concrete low-rise, ribbed concrete, metal warehouse; windows, frames, grime,
-  night emission) and a roof lit fallback
+- facade shader (procedural window grid, wall/glass colours, night windows)
 - water shader (scrolling normals, Fresnel, sun specular, fog)
-- sky shader (gradient, sun disk/glow)
+- procedural skybox (gradient/atmosphere/sun)
+- ACES tonemapping + bloom + colour adjustments post stack
 - vegetation: 21 GLB variants, `veg/inst_*.bin` parsing, instanced trees/shrubs/grass
-- roof details: `details/det_*.bin` mesh + vertex colors
-- native IMGUI minimap, full map (M), 1–7 teleports
+- roof details: `details/det_*.bin` mesh + vertex colours
 - 60 km ocean, directional light, shadows, fog
 - fly camera, loading HUD, scene + Windows player build pipeline
 
 ## Not yet
 
+- full six-style facade detail from the web shader (current pass is a readable
+  procedural window grid, not the exact stylised facade)
 - roof detail shader (currently a vertex-colour unlit material)
-- roof props `det_*.bin` and `roads/props.json`
+- roof props `roads/props.json`
 - baked AO texture path (`ao_*.webp`)
 - far vegetation billboards / impostor atlas
-- admin panel / start menu / chat
+- UI (minimap/full map/admin panel/start menu) — deliberately paused
 - walk, car, plane
 - Android / iOS export
 
@@ -76,4 +77,5 @@ and git-ignored.
 ## Screenshots
 
 - `Docs/step1.png` — terrain + city chunks, first pass
-- `Docs/city.png` — Brickell with facade/water/vegetation
+- `Docs/render.png` — current render pass: aerial terrain, water, sky, vegetation
+- `Docs/city.png`, `Docs/mapui.png` — earlier intermediate passes

@@ -123,7 +123,7 @@ namespace Leonida
             if (n.StartsWith("Building_Wall"))
                 return Facade();
             if (n.StartsWith("Building_Roof"))
-                return Lit("Building_Roof", new Color(0.31f, 0.31f, 0.30f), 0.18f);
+                return Lit("Building_Roof", new Color(0.56f, 0.54f, 0.49f), 0.22f);
             if (n.StartsWith("Road_highway"))
                 return Lit("Road_highway", new Color(0.10f, 0.10f, 0.11f), 0.25f);
             if (n.StartsWith("Road_dirt"))
@@ -159,6 +159,9 @@ namespace Leonida
             {
                 m = Lit(key, new Color(0.05f, 0.24f, 0.34f), 0.92f, 0.15f);
             }
+            if (m.HasProperty("_ShallowColor")) m.SetColor("_ShallowColor", new Color(0.10f, 0.52f, 0.58f, 1f));
+            if (m.HasProperty("_DeepColor")) m.SetColor("_DeepColor", new Color(0.015f, 0.16f, 0.26f, 1f));
+            if (m.HasProperty("_SpecStrength")) m.SetFloat("_SpecStrength", 0.8f);
             m.enableInstancing = true;
             Cache[key] = m;
             return m;

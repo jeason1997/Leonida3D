@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 namespace Leonida
 {
@@ -16,8 +17,8 @@ namespace Leonida
         public Camera cam;
         public Light sun;
         [Range(0, 5)] public int chunkRadius = 2;
-        public Vector3 startPosition = new Vector3(150f, 220f, 1700f);
-        public Vector3 lookTarget = new Vector3(-2400f, 60f, -300f);
+        public Vector3 startPosition = new Vector3(150f, 420f, 1700f);
+        public Vector3 lookTarget = new Vector3(-2400f, 30f, 0f);
 
         public string Status { get; private set; } = "starting";
         public bool Ready { get; private set; }
@@ -26,6 +27,12 @@ namespace Leonida
         string _assetsRoot;
         int _chunksLoaded;
         int _chunksTotal;
+        bool _cleanMode;
+
+        void Awake()
+        {
+            _cleanMode = Array.IndexOf(Environment.GetCommandLineArgs(), "-clean") >= 0;
+        }
         LeonidaVegetation _veg;
 
         async void Start()
@@ -104,15 +111,18 @@ namespace Leonida
             if (environment != null) environment.Init(cam, sun);
 
             CreateOcean();
+            SetupPostProcessing();
 
             Status = "building terrain";
             await Task.Yield();
 
-            var terrain = gameObject.AddComponent<LeonidaTerrain>();
-            terrain.Build(Manifest, _assetsRoot);
-
             int ci = Mathf.FloorToInt((startPosition.x - Manifest.west) / Manifest.chunk);
             int cj = Mathf.FloorToInt((Manifest.north - (-startPosition.z)) / Manifest.chunk);
+
+            var terrain = gameObject.AddComponent<LeonidaTerrain>();
+            terrain.Build(Manifest, _assetsRoot);
+            terrain.BuildNear(Manifest, _assetsRoot, ci, cj, 1);
+
             Status = $"loading chunks around {ci}_{cj}";
 
             var chunks = gameObject.AddComponent<LeonidaChunks>();
@@ -147,6 +157,9 @@ namespace Leonida
             {
                 _veg = gameObject.AddComponent<LeonidaVegetation>();
                 _veg.cam = cam;
+                _veg.treeRadius = 1200;
+                _veg.shrubRadius = 500;
+                _veg.grassRadius = 200;
                 await _veg.Init(Manifest, _assetsRoot,
                     (done, total, name) => Status = $"loading vegetation {done}/{total}  ({name})");
                 vegStatus = $"veg t{_veg.TreeInstances} s{_veg.ShrubInstances} g{_veg.GrassInstances}  vegchunks {_veg.LoadedChunks}";
@@ -162,9 +175,35 @@ namespace Leonida
             Ready = true;
             Status = $"READY  terrain chunks {terrain.ChunkCount}  city tiles {_chunksLoaded}/{_chunksTotal}  {detailStatus}  {vegStatus}";
             Debug.Log("Leonida: " + Status);
+        }
 
-            var mapUi = gameObject.AddComponent<LeonidaMapUI>();
-            mapUi.Init(cam, Manifest);
+        void SetupPostProcessing()
+        {
+            if (cam == null) return;
+            cam.allowHDR = true;
+            var data = cam.GetUniversalAdditionalCameraData();
+            data.renderPostProcessing = true;
+
+            var go = new GameObject("PostVolume");
+            var volume = go.AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.priority = 10f;
+            var profile = ScriptableObject.CreateInstance<VolumeProfile>();
+
+            var tone = profile.Add<Tonemapping>(true);
+            tone.mode.Override(TonemappingMode.ACES);
+
+            var color = profile.Add<ColorAdjustments>(true);
+            color.contrast.Override(10f);
+            color.saturation.Override(6f);
+            color.postExposure.Override(0.15f);
+
+            var bloom = profile.Add<Bloom>(true);
+            bloom.intensity.Override(0.15f);
+            bloom.threshold.Override(1.05f);
+            bloom.scatter.Override(0.65f);
+
+            volume.profile = profile;
         }
 
         void ApplyCommandLineCamera()
@@ -202,6 +241,7 @@ namespace Leonida
 
         void OnGUI()
         {
+            if (_cleanMode) return;
             var style = new GUIStyle(GUI.skin.label)
             {
                 fontSize = 15,
