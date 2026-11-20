@@ -9,6 +9,7 @@ namespace Leonida
         static Material _baseLit;
         static Material _baseWater;
         static Material _baseFacade;
+        static Material _baseRoof;
 
         static Material BaseLit
         {
@@ -52,6 +53,15 @@ namespace Leonida
                     }
                 }
                 return _baseFacade;
+            }
+        }
+
+        static Material BaseRoof
+        {
+            get
+            {
+                if (_baseRoof == null) _baseRoof = Resources.Load<Material>("Roof");
+                return _baseRoof;
             }
         }
 
@@ -123,7 +133,7 @@ namespace Leonida
             if (n.StartsWith("Building_Wall"))
                 return Facade();
             if (n.StartsWith("Building_Roof"))
-                return Lit("Building_Roof", new Color(0.56f, 0.54f, 0.49f), 0.22f);
+                return Roof();
             if (n.StartsWith("Road_highway"))
                 return Lit("Road_highway", new Color(0.10f, 0.10f, 0.11f), 0.25f);
             if (n.StartsWith("Road_dirt"))
@@ -179,6 +189,22 @@ namespace Leonida
 
             var m = new Material(BaseFacade) { name = key };
             m.SetFloat("_Night", 0f);
+            m.enableInstancing = true;
+            Cache[key] = m;
+            return m;
+        }
+
+        static Material Roof()
+        {
+            const string key = "Building_Roof";
+            if (Cache.TryGetValue(key, out var cached)) return cached;
+
+            if (BaseRoof == null)
+            {
+                return Lit(key, new Color(0.56f, 0.54f, 0.49f), 0.22f);
+            }
+
+            var m = new Material(BaseRoof) { name = key };
             m.enableInstancing = true;
             Cache[key] = m;
             return m;
