@@ -177,6 +177,12 @@ namespace Leonida
             Ready = true;
             Status = $"READY  terrain chunks {terrain.ChunkCount}  city tiles {_chunksLoaded}/{_chunksTotal}  {detailStatus}  {vegStatus}";
             Debug.Log("Leonida: " + Status);
+
+            var mapUi = gameObject.AddComponent<LeonidaMapUI>();
+            mapUi.Init(cam, Manifest);
+            mapUi.Hidden = _cleanMode;
+            if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-map") >= 0)
+                mapUi.SetOpen(true);
         }
 
         void SetupPostProcessing()

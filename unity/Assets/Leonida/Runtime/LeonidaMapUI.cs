@@ -15,6 +15,8 @@ namespace Leonida
         float _x0 = -10856f, _x1 = 3480f, _y0 = -9480f, _y1 = 11000f;
         float _radarMeters = 1600f;
         bool _mapOpen;
+        public bool Hidden;
+        public void SetOpen(bool open) { _mapOpen = open; }
         GUIStyle _label;
         GUIStyle _title;
 
@@ -65,7 +67,7 @@ namespace Leonida
 
         void OnGUI()
         {
-            if (_map == null || _cam == null) return;
+            if (Hidden || _map == null || _cam == null) return;
 
             if (_label == null)
             {
