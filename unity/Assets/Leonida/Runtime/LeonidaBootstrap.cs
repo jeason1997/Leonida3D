@@ -263,6 +263,7 @@ namespace Leonida
         }
 
         GUIStyle _hudStyle;
+        float _fps;
 
         void OnGUI()
         {
@@ -276,10 +277,12 @@ namespace Leonida
                 };
             }
             _hudStyle.normal.textColor = Ready ? Color.white : new Color(1f, 0.9f, 0.6f);
+            _fps = Mathf.Lerp(_fps <= 0f ? 60f : _fps, 1f / Mathf.Max(0.0001f, Time.smoothDeltaTime), 0.08f);
             var style = _hudStyle;
             GUI.Box(new Rect(12, 12, 920, 86), GUIContent.none);
             GUI.Label(new Rect(22, 18, 900, 24), "LEONIDA 3D / Unity native port", style);
             GUI.Label(new Rect(22, 42, 900, 22), Status, style);
+            GUI.Label(new Rect(Screen.width - 170f, 18f, 150f, 24f), $"FPS {_fps:F0}", style);
             if (_veg != null)
             {
                 GUI.Label(new Rect(22, 66, 900, 22),

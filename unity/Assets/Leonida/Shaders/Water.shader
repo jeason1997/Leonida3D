@@ -96,7 +96,8 @@ Shader "Leonida/Water"
                 float3 n1 = SampleNormal(uv1);
                 float3 n2 = SampleNormal(uv2);
 
-                float2 slope = (n1.xy + n2.xy) * _NormalStrength;
+                float wdist = length(_WorldSpaceCameraPos - i.positionWS);
+                float2 slope = (n1.xy + n2.xy) * _NormalStrength * (1.0 - 0.75 * smoothstep(400.0, 3000.0, wdist));
                 float3 N = normalize(float3(slope.x, 1.0, slope.y));
 
                 float3 V = GetWorldSpaceNormalizeViewDir(i.positionWS);
@@ -114,7 +115,7 @@ Shader "Leonida/Water"
                 float ndl = saturate(dot(N, L)) * 0.35 + 0.65;
 
                 float3 col = baseCol * (ambient + mainLight.color * ndl * mainLight.shadowAttenuation);
-                col += mainLight.color * spec * mainLight.shadowAttenuation;
+                col += mainLight.color * spec * mainLight.shadowAttenuation * (1.0 - smoothstep(150.0, 1200.0, wdist));
                 col = lerp(col, _DeepColor.rgb + ambient * 0.35, fresnel * 0.65);
 
                 // shore foam: only the shallow band, using the original height map

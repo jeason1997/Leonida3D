@@ -110,7 +110,6 @@ namespace Leonida
             DrawRadar(radar);
 
             if (_mapOpen) DrawFullMap();
-            else DrawHint();
         }
         bool _radarFlip = true;
         LeonidaRadarUI _radarUI;
