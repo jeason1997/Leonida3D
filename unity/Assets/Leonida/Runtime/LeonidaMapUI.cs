@@ -99,59 +99,66 @@ namespace Leonida
             if (_mapOpen) DrawFullMap();
             else DrawHint();
         }
+        Texture2D _radarTex;
+        Color32[] _radarPixels;
+
         void DrawRadar(Rect rect)
         {
-            GUI.color = new Color(0.05f, 0.12f, 0.18f, 0.95f);
-            GUI.DrawTexture(rect, Texture2D.whiteTexture);
-            GUI.color = Color.white;
-
             Vector3 p = _cam.transform.position;
             float camNorth = -p.z;
             Vector3 fwd = _cam.transform.forward;
-            float heading = Mathf.Atan2(fwd.x, -fwd.z) * Mathf.Rad2Deg;
+            float heading = Mathf.Atan2(fwd.x, -fwd.z) * Mathf.Deg2Rad;
             float mpp = Mathf.Clamp(1.6f + Mathf.Max(0f, p.y) / 110f, 1.6f, 40f);
-            float k = 1f / mpp;
-            float C = _manifest != null ? _manifest.chunk : 2048f;
-            float west = _manifest != null ? _manifest.west : _x0;
-            float north = _manifest != null ? _manifest.north : _y1;
 
-            GUI.BeginGroup(rect);
-            Vector2 c = new Vector2(rect.width * 0.5f, rect.height * 0.62f);
-            GUIUtility.RotateAroundPivot(-heading, c);
-
-            float R = Mathf.Sqrt(rect.width * rect.width + rect.height * rect.height) * mpp;
-            int i0 = Mathf.FloorToInt((p.x - R - west) / C), i1 = Mathf.FloorToInt((p.x + R - west) / C);
-            int j0 = Mathf.FloorToInt((north - (camNorth + R)) / C), j1 = Mathf.FloorToInt((north - (camNorth - R)) / C);
-            for (int i = i0; i <= i1; i++)
+            int w = Mathf.Max(64, Mathf.RoundToInt(rect.width));
+            int h = Mathf.Max(48, Mathf.RoundToInt(rect.height));
+            if (_radarTex == null || _radarTex.width != w || _radarTex.height != h)
             {
-                for (int j = j0; j <= j1; j++)
+                _radarTex = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
+                _radarPixels = new Color32[w * h];
+            }
+
+            Color32 water = new Color32(35, 64, 86, 255);
+            float cx = w * 0.5f, cy = h * 0.62f;
+            float sin = Mathf.Sin(heading), cos = Mathf.Cos(heading);
+            float mapW = Mathf.Max(1f, _x1 - _x0), mapH = Mathf.Max(1f, _y1 - _y0);
+
+            for (int y = 0; y < h; y++)
+            {
+                float dy = y - cy;
+                for (int x = 0; x < w; x++)
                 {
-                    if (!_tiles.TryGetValue($"{i}_{j}", out var tex) || tex == null) continue;
-                    float mx = west + i * C + C * 0.5f;
-                    float mn = north - j * C - C * 0.5f;
-                    float sx = (mx - p.x) * k;
-                    float sy = -(mn - camNorth) * k;
-                    GUI.DrawTexture(new Rect(sx - C * k * 0.5f, sy - C * k * 0.5f, C * k, C * k), tex, ScaleMode.StretchToFill, false);
+                    float dx = x - cx;
+                    // screen up = camera forward; right = camera right
+                    float east = dx * cos - dy * sin;
+                    float north = -dx * sin - dy * cos;
+                    float mapX = p.x + east * mpp;
+                    float mapNorth = camNorth + north * mpp;
+                    float u = (mapX - _x0) / mapW;
+                    float v = (mapNorth - _y0) / mapH;
+                    _radarPixels[y * w + x] = (u < 0f || u > 1f || v < 0f || v > 1f)
+                        ? water
+                        : (Color32)_map.GetPixelBilinear(u, v);
                 }
             }
 
-            GUIUtility.RotateAroundPivot(heading, c);
-            GUI.EndGroup();
+            _radarTex.SetPixels32(_radarPixels);
+            _radarTex.Apply(false);
+            GUI.DrawTexture(rect, _radarTex, ScaleMode.StretchToFill, false);
 
-            // Player arrow stays up; the map turns underneath it.
-            float cx = rect.x + rect.width * 0.5f;
-            float cy = rect.y + rect.height * 0.62f;
+            // Player arrow stays up; the map image itself is already heading-up.
+            float scx = rect.x + rect.width * 0.5f;
+            float scy = rect.y + rect.height * 0.62f;
             var arrow = new GUIStyle(_label) { fontSize = 20, alignment = TextAnchor.MiddleCenter };
-            GUI.Label(new Rect(cx - 14f, cy - 14f, 28f, 28f), "▲", arrow);
+            GUI.Label(new Rect(scx - 14f, scy - 14f, 28f, 28f), "▲", arrow);
 
             // N on the rim, where north currently is.
-            float rad = heading * Mathf.Deg2Rad;
-            float nx = Mathf.Sin(-rad), ny = -Mathf.Cos(-rad);
-            float sx2 = nx > 0f ? (rect.width - 12f - c.x) / nx : nx < 0f ? (12f - c.x) / nx : float.PositiveInfinity;
-            float sy2 = ny > 0f ? (rect.height - 12f - c.y) / ny : ny < 0f ? (12f - c.y) / ny : float.PositiveInfinity;
+            float nx = Mathf.Sin(-heading), ny = -Mathf.Cos(-heading);
+            float sx2 = nx > 0f ? (rect.width - 12f - cx) / nx : nx < 0f ? (12f - cx) / nx : float.PositiveInfinity;
+            float sy2 = ny > 0f ? (rect.height - 12f - cy) / ny : ny < 0f ? (12f - cy) / ny : float.PositiveInfinity;
             float rim = Mathf.Min(sx2, sy2);
             var nstyle = new GUIStyle(_label) { fontSize = 13, alignment = TextAnchor.MiddleCenter };
-            GUI.Label(new Rect(cx + nx * rim - 10f, cy + ny * rim - 10f, 20f, 20f), "N", nstyle);
+            GUI.Label(new Rect(scx + nx * rim - 10f, scy + ny * rim - 10f, 20f, 20f), "N", nstyle);
 
             GUI.color = new Color(0f, 0f, 0f, 0.55f);
             GUI.DrawTexture(new Rect(rect.x - 3f, rect.y - 3f, rect.width + 6f, 3f), Texture2D.whiteTexture);
