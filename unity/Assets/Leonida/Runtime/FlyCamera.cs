@@ -41,7 +41,7 @@ namespace Leonida
             {
                 Vector2 delta = mouse.delta.ReadValue();
                 _yaw += delta.x * lookSensitivity;
-                _pitch = Mathf.Clamp(_pitch + delta.y * lookSensitivity, minPitch, maxPitch);
+                _pitch = Mathf.Clamp(_pitch - delta.y * lookSensitivity, minPitch, maxPitch);
                 transform.rotation = Quaternion.Euler(_pitch, _yaw, 0f);
             }
 

@@ -123,7 +123,7 @@ namespace Leonida
             if (mouse == null || Cursor.lockState != CursorLockMode.Locked) return;
             Vector2 d = mouse.delta.ReadValue();
             _yaw += d.x * _lookSens;
-            _pitch = Mathf.Clamp(_pitch + d.y * _lookSens, -80f, 80f);
+            _pitch = Mathf.Clamp(_pitch - d.y * _lookSens, -80f, 80f);
         }
 
         float Ground(float x, float mapNorth)

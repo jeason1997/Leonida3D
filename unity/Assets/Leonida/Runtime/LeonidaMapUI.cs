@@ -108,6 +108,7 @@ namespace Leonida
         Vector3 _radarLastPos;
         float _radarLastHeading;
         int _radarLastW, _radarLastH;
+        float _radarNext;
 
         void DrawRadar(Rect rect)
         {
@@ -126,11 +127,13 @@ namespace Leonida
                 _radarPixels = new Color32[w * h];
             }
 
-            bool dirty = _radarLastW != w || _radarLastH != h
+            bool moved = _radarLastW != w || _radarLastH != h
                       || (p - _radarLastPos).sqrMagnitude > 0.25f
                       || Mathf.Abs(Mathf.DeltaAngle(_radarLastHeading, heading * Mathf.Rad2Deg)) > 0.5f;
+            bool dirty = moved && Time.unscaledTime >= _radarNext;
             if (dirty)
             {
+                _radarNext = Time.unscaledTime + 0.08f;
                 _radarLastPos = p;
                 _radarLastHeading = heading * Mathf.Rad2Deg;
                 _radarLastW = w; _radarLastH = h;
