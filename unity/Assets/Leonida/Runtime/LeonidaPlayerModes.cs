@@ -108,8 +108,8 @@ namespace Leonida
             var mouse = Mouse.current;
             if (mouse == null || Cursor.lockState != CursorLockMode.Locked) return;
             Vector2 d = mouse.delta.ReadValue();
-            _yaw += d.x * _lookSens;
-            _pitch = Mathf.Clamp(_pitch - d.y * _lookSens, -80f, 80f);
+            _yaw -= d.x * _lookSens;
+            _pitch = Mathf.Clamp(_pitch + d.y * _lookSens, -80f, 80f);
         }
 
         float Ground(float x, float mapNorth)
@@ -156,7 +156,7 @@ namespace Leonida
             if (throttle == 0f && brake == 0f) _carSpeed *= Mathf.Exp(-0.35f * Time.deltaTime);
             _carSpeed = Mathf.Clamp(_carSpeed, -12f, 60f);
             float turn = steer * Mathf.Min(Mathf.Abs(_carSpeed) / 6f, 1f) * (0.9f - 0.5f * Mathf.Min(Mathf.Abs(_carSpeed) / 60f, 1f));
-            _carYaw -= turn * Mathf.Sign(_carSpeed + 0.001f) * Mathf.Rad2Deg * Time.deltaTime;
+            _carYaw += turn * Mathf.Sign(_carSpeed + 0.001f) * Mathf.Rad2Deg * Time.deltaTime;
 
             Vector3 fwd = Quaternion.Euler(0f, _carYaw, 0f) * Vector3.forward;
             Vector3 p = _carPos + fwd * _carSpeed * Time.deltaTime;
@@ -183,6 +183,8 @@ namespace Leonida
             const float TURN = 0.85f, MAX_BANK = 0.75f, ROLL = 1.1f, PITCH_RATE = 0.9f;
             float drag = THRUST / (V_MAX * V_MAX);
 
+            float planeTurn = (kb.aKey.isPressed ? 1f : 0f) - (kb.dKey.isPressed ? 1f : 0f);
+            _yaw += planeTurn * 28f * Time.deltaTime;
             float thr = (kb.wKey.isPressed ? 1f : 0f) - (kb.sKey.isPressed ? 1f : 0f);
             _planeThrottle = Mathf.Clamp01(_planeThrottle + thr * 0.6f * Time.deltaTime);
 
