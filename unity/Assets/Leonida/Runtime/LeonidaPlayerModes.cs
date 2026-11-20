@@ -17,7 +17,7 @@ namespace Leonida
         float _carSpeed, _carYaw = 180f;
         float _walkY, _walkVy;
         Vector3 _carPos, _planePos;
-        float _planeSpeed = 85f, _planePitch;
+        float _planeSpeed = 60f, _planePitch, _planeYaw, _planeRoll, _planeThrottle = 0.65f, _planeSink;
         GameObject _car, _plane;
 
         public string ModeName => mode switch
@@ -71,7 +71,13 @@ namespace Leonida
                 _yaw = e.y;
             }
             if (m == Mode.Drive) { _carYaw = _yaw; _carPos = cam.transform.position; _carPos.y = Ground(_carPos.x, -_carPos.z) + 0.55f; }
-            if (m == Mode.Plane) { _planePitch = _pitch; _planePos = cam.transform.position; }
+            if (m == Mode.Plane)
+            {
+                _planePitch = 0f; _planeYaw = _yaw; _planeRoll = 0f; _planeThrottle = 0.65f; _planeSink = 0f;
+                _planeSpeed = 60f;
+                _planePos = cam.transform.position;
+                _planePos.y = Mathf.Max(_planePos.y, Ground(_planePos.x, -_planePos.z) + 150f);
+            }
         }
 
         void Update()
@@ -172,28 +178,52 @@ namespace Leonida
 
         void Plane(Keyboard kb)
         {
-            float throttle = (kb.wKey.isPressed ? 1f : 0f) - (kb.sKey.isPressed ? 1f : 0f);
-            _planeSpeed = Mathf.Clamp(_planeSpeed + throttle * 22f * Time.deltaTime, 35f, 160f);
-            float pitch = (kb.sKey.isPressed && !kb.wKey.isPressed) ? -10f : (kb.wKey.isPressed && !kb.sKey.isPressed ? 8f : 0f);
-            float bank = (kb.dKey.isPressed ? 1f : 0f) - (kb.aKey.isPressed ? 1f : 0f);
-            _planePitch = Mathf.Lerp(_planePitch, pitch, 2f * Time.deltaTime);
-            _yaw += bank * 28f * Time.deltaTime;
+            const float G = 9.81f, V_MAX = 92f, THRUST = 13f, STALL = 30f, CRUISE = 60f;
+            const float TURN = 0.85f, MAX_BANK = 0.75f, ROLL = 1.1f, PITCH_RATE = 0.9f;
+            float drag = THRUST / (V_MAX * V_MAX);
 
-            Vector3 fwd = Quaternion.Euler(_planePitch, _yaw, -bank * 25f) * Vector3.forward;
-            Vector3 p = _planePos + fwd * _planeSpeed * Time.deltaTime;
-            p.y = Mathf.Max(p.y, Ground(p.x, -p.z) + 8f);
+            float thr = (kb.wKey.isPressed ? 1f : 0f) - (kb.sKey.isPressed ? 1f : 0f);
+            _planeThrottle = Mathf.Clamp01(_planeThrottle + thr * 0.6f * Time.deltaTime);
+
+            float v = _planeSpeed;
+            float auth = Mathf.Clamp((v - STALL * 0.5f) / (CRUISE - STALL * 0.5f), 0.15f, 1f);
+            float dyaw = Mathf.DeltaAngle(_planeYaw, _yaw) * Mathf.Deg2Rad;
+            float yawRate = Mathf.Clamp(dyaw * 2f, -TURN * auth, TURN * auth);
+            _planeYaw += yawRate * Mathf.Rad2Deg * Time.deltaTime;
+
+            float wantPitch = Mathf.Clamp(_pitch * Mathf.Deg2Rad, -1.2f, 1.2f);
+            _planePitch += Mathf.Clamp((wantPitch - _planePitch) * 2.5f, -PITCH_RATE * auth, PITCH_RATE * auth) * Time.deltaTime;
+            float bank = Mathf.Clamp(Mathf.Atan(v * yawRate / G), -MAX_BANK, MAX_BANK);
+            _planeRoll += (bank - _planeRoll) * (1f - Mathf.Exp(-ROLL * Time.deltaTime));
+
+            if (v < STALL)
+            {
+                float stall = Mathf.Clamp01(1f - v / STALL);
+                _planePitch -= stall * 1.8f * Time.deltaTime;
+                _planeSink += (stall * 16f - _planeSink) * (1f - Mathf.Exp(-1.5f * Time.deltaTime));
+            }
+            else _planeSink *= Mathf.Exp(-2f * Time.deltaTime);
+
+            float a = THRUST * _planeThrottle - drag * v * v - G * Mathf.Sin(_planePitch);
+            _planeSpeed = Mathf.Max(0f, v + a * Time.deltaTime);
+
+            Vector3 fwd = Quaternion.Euler(_planePitch * Mathf.Rad2Deg, _planeYaw, -_planeRoll * Mathf.Rad2Deg) * Vector3.forward;
+            Vector3 p = _planePos + fwd * (_planeSpeed * Time.deltaTime);
+            p.y -= _planeSink * Time.deltaTime;
+            float ground = Ground(p.x, -p.z) + 2f;
+            if (p.y < ground) p.y = ground;
             _planePos = p;
-            cam.transform.position = p;
 
             if (_plane != null)
             {
                 _plane.transform.position = p;
-                _plane.transform.rotation = Quaternion.LookRotation(fwd, Vector3.up) * Quaternion.Euler(0f, 0f, -bank * 25f);
+                _plane.transform.rotation = Quaternion.LookRotation(fwd, Vector3.up) * Quaternion.Euler(0f, 0f, -_planeRoll * Mathf.Rad2Deg);
             }
 
-            Vector3 camPos = p - fwd * 13f + Vector3.up * 4f;
+            Vector3 camPos = p - fwd * 17f + Vector3.up * 4f;
+            camPos.y = Mathf.Max(camPos.y, Ground(camPos.x, -camPos.z) + 1.5f);
             cam.transform.position = camPos;
-            cam.transform.rotation = Quaternion.LookRotation(p + fwd * 10f - camPos, Vector3.up);
+            cam.transform.rotation = Quaternion.LookRotation(p + fwd * 40f - camPos, Vector3.up);
         }
 
         GameObject BuildCar()
