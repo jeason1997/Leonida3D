@@ -17,6 +17,7 @@ namespace Leonida
         {
             _boot = boot;
             InputLocked = true;
+            LeonidaCursor.UiOpen = true;
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.None;
         }
@@ -33,6 +34,7 @@ namespace Leonida
         {
             _started = true;
             InputLocked = false;
+            LeonidaCursor.UiOpen = false;
         }
 
         void OnGUI()

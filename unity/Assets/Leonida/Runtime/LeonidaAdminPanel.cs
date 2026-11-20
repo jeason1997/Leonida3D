@@ -10,7 +10,7 @@ namespace Leonida
         LeonidaManifest _manifest;
         LeonidaPlayerModes _modes;
         bool _open;
-        public void SetOpen(bool open) { _open = open; }
+        public void SetOpen(bool open) { _open = open; LeonidaCursor.UiOpen = open; if (open) LeonidaCursor.Unlock(); }
         GUIStyle _label, _button, _title;
 
         public void Init(Camera cam, LeonidaManifest manifest, LeonidaPlayerModes modes)
@@ -25,6 +25,8 @@ namespace Leonida
             if (LeonidaStartMenu.InputLocked) return;
             var kb = Keyboard.current;
             if (kb != null && kb.f8Key.wasPressedThisFrame) _open = !_open;
+            LeonidaCursor.UiOpen = _open;
+            if (_open) LeonidaCursor.Unlock();
         }
 
         void OnGUI()

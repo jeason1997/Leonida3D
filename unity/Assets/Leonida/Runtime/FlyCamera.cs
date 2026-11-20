@@ -34,9 +34,10 @@ namespace Leonida
         void Update()
         {
             if (LeonidaStartMenu.InputLocked) return;
+            LeonidaCursor.Update();
 
             var mouse = Mouse.current;
-            if (mouse != null && mouse.rightButton.isPressed)
+            if (mouse != null && Cursor.lockState == CursorLockMode.Locked)
             {
                 Vector2 delta = mouse.delta.ReadValue();
                 _yaw += delta.x * lookSensitivity;
