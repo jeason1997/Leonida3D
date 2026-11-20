@@ -111,16 +111,24 @@ namespace Leonida
             const string key = "LeonidaDetail";
             if (Cache.TryGetValue(key, out var cached)) return cached;
 
-            var shader = Shader.Find("Leonida/TerrainVertexColor");
+            var baseDetail = Resources.Load<Material>("Detail");
             Material m;
-            if (shader != null)
+            if (baseDetail != null)
             {
-                m = new Material(shader) { name = key };
-                if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", new Color(0.58f, 0.56f, 0.52f, 1f));
+                m = new Material(baseDetail) { name = key };
             }
             else
             {
-                m = Lit(key, new Color(0.55f, 0.53f, 0.48f), 0.1f);
+                var shader = Shader.Find("Leonida/TerrainVertexColor");
+                if (shader != null)
+                {
+                    m = new Material(shader) { name = key };
+                    if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", new Color(0.58f, 0.56f, 0.52f, 1f));
+                }
+                else
+                {
+                    m = Lit(key, new Color(0.55f, 0.53f, 0.48f), 0.1f);
+                }
             }
             m.enableInstancing = true;
             Cache[key] = m;

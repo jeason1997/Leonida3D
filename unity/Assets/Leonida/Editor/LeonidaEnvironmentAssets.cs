@@ -72,6 +72,17 @@ namespace Leonida.EditorTools
                 Debug.LogError("LEONIDA_ENV roof shader missing");
             }
 
+            var detailShader = Shader.Find("Leonida/Detail");
+            if (detailShader != null && AssetDatabase.LoadAssetAtPath<Material>("Assets/Leonida/Resources/Detail.mat") == null)
+            {
+                var m = new Material(detailShader) { name = "Detail" };
+                AssetDatabase.CreateAsset(m, "Assets/Leonida/Resources/Detail.mat");
+            }
+            else if (detailShader == null)
+            {
+                Debug.LogError("LEONIDA_ENV detail shader missing");
+            }
+
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log("LEONIDA_ENV_OK");
