@@ -128,14 +128,8 @@ namespace Leonida
                     mesh.tangents = tangents;
                 }
 
-                var triangles = mesh.triangles;
-                for (int i = 0; i + 2 < triangles.Length; i += 3)
-                {
-                    int tmp = triangles[i];
-                    triangles[i] = triangles[i + 1];
-                    triangles[i + 1] = tmp;
-                }
-                mesh.triangles = triangles;
+                // Do NOT read/write mesh.triangles here: the setter collapses every submesh
+                // into one, which was destroying the [wall, roof] material split.
                 mesh.RecalculateBounds();
                 filter.sharedMesh = mesh;
             }

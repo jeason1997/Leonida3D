@@ -50,16 +50,11 @@ namespace Leonida.EditorTools
                 Debug.LogError("LEONIDA_ENV water shader missing");
             }
 
-            var facadeShader = Shader.Find("Leonida/Facade");
-            if (facadeShader != null && AssetDatabase.LoadAssetAtPath<Material>("Assets/Leonida/Resources/Facade.mat") == null)
+            var facadeShader = Shader.Find("Leonida/Facade2");
+            if (facadeShader != null && AssetDatabase.LoadAssetAtPath<Material>("Assets/Leonida/Resources/Facade2.mat") == null)
             {
-                var m = new Material(facadeShader) { name = "Facade" };
-                m.SetFloat("_Night", 0f);
-                AssetDatabase.CreateAsset(m, "Assets/Leonida/Resources/Facade.mat");
-            }
-            else if (facadeShader == null)
-            {
-                Debug.LogError("LEONIDA_ENV facade shader missing");
+                var m = new Material(facadeShader) { name = "Facade2" };
+                AssetDatabase.CreateAsset(m, "Assets/Leonida/Resources/Facade2.mat");
             }
 
             var roofShader = Shader.Find("Leonida/Roof");

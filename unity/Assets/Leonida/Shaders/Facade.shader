@@ -142,7 +142,7 @@ Shader "Leonida/Facade"
             // ================================================================
             // The facade pattern (FACADE_FRAG_COLOR): writes albedo + fRough / fMetal / fEmit.
             // ================================================================
-            void FacadeColor(float2 vF, float2 vS, float2 vL, float night,
+            void FacadeColor(float2 vF, float2 vS, float2 vL, float worldY, float night,
                              out float3 albedoOut, out float roughOut, out float metalOut, out float3 emitOut)
             {
                 float style = floor(vS.x);
@@ -150,7 +150,7 @@ Shader "Leonida/Facade"
                 float seed = gSeed;
                 float H = max(1.0 - vS.y, 3.0);
                 float u = vF.x;
-                float z = 1.0 - vF.y;
+                float z = max(worldY, 0.0);
                 float halfL = max(vL.x, 0.5);
                 float gAa = max(max(abs(ddx(u)) + abs(ddy(u)), abs(ddx(z)) + abs(ddy(z))), 0.003);
                 float aa = gAa;
@@ -301,7 +301,7 @@ Shader "Leonida/Facade"
                             * (1.0 - 0.15 * clamp(1.0 - z / 1.5, 0.0, 1.0));
                 float3 wall = wallC * lerp(float3(1.0, 1.0, 1.0), grain, texAmt) * grime;
                 float ph = LHASH(floor(u / max(bayW, 1.0) + 0.5), floor(z / floorH), seed);
-                float3 paneC = glassC * (0.75 + 0.5 * ph);
+                float3 paneC = float3(1.0, 0.0, 0.0);
                 float curtain = step(1.0 - curtainOdds, ph);
                 paneC = lerp(paneC, lerp(float3(0.62, 0.57, 0.48), float3(0.75, 0.75, 0.73), frac(ph * 7.0)) * 0.55,
                              curtain * 0.8);
@@ -330,7 +330,7 @@ Shader "Leonida/Facade"
                 float ug = u + bw * 0.5, g0 = bw * 0.5 - gw * 0.5, g1 = bw * 0.5 + gw * 0.5;
                 float covU = (CUM(ug + hz, bw, g0, g1) - CUM(ug - hz, bw, g0, g1)) / (2.0 * hz) * colOdds;
                 float gcov = clamp(covZ * covU, 0.0, 1.0) * LRANGE(z, 4.0, H - 1.2) * LBOX(u, halfL - 0.8);
-                float3 coarse = lerp(wallC, glassC * 1.1, gcov);
+                float3 coarse = lerp(wallC, float3(1.0, 0.0, 0.0), gcov);
                 col = lerp(col, coarse, farMix);
                 fRough = lerp(fRough, lerp(wallRough, 0.12, glassFrac), farMix);
                 fMetal = lerp(fMetal, lerp(wallMetal, glassMetal, glassFrac), farMix);
@@ -419,6 +419,7 @@ Shader "Leonida/Facade"
             half4 FacadeFrag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
+                return half4(0.0, 1.0, 0.0, 1.0);
 
                 float3 positionWS = input.positionWS;
                 half3 normalWS = normalize(input.normalWS);
@@ -427,7 +428,20 @@ Shader "Leonida/Facade"
                 float rough;
                 float metal;
                 float3 emission;
-                FacadeColor(input.uvF, input.uvS, input.uvL, _Night, albedo, rough, metal, emission);
+                // The imported UV0 is not a wall-space coordinate (its V is almost constant),
+                // so derive the horizontal facade coordinate from the world position and the
+                // wall tangent, and use world height for the floor coordinate.
+                float3 Nw = normalize(normalWS);
+                float3 Tw = normalize(cross(float3(0.0, 1.0, 0.0), Nw) + float3(1e-4, 0.0, 0.0));
+                float wallU = dot(positionWS.xz, Tw.xz);
+                FacadeColor(float2(wallU, 0.0), input.uvS, input.uvL, positionWS.y, _Night, albedo, rough, metal, emission);
+
+                // Diagnostic window overlay in world space.
+                float2 wcell = float2(wallU / 5.0, positionWS.y / 4.0);
+                float2 wf = frac(wcell);
+                float wwin = step(0.22, wf.x) * (1.0 - step(0.78, wf.x))
+                           * step(0.30, wf.y) * (1.0 - step(0.80, wf.y));
+                albedo = lerp(albedo, float3(1.0, 0.0, 0.0), wwin * 0.9);
 
                 // Reference/js/materials.js WALL_AO: ground AO just outside the wall,
                 // fading out with height, plus a contact shadow at the foot.

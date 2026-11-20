@@ -44,12 +44,14 @@ namespace Leonida
             {
                 if (_baseFacade == null)
                 {
-                    _baseFacade = Resources.Load<Material>("Facade");
+                    _baseFacade = Resources.Load<Material>("Facade2");
+                    if (_baseFacade == null) _baseFacade = Resources.Load<Material>("Facade");
                     if (_baseFacade == null)
                     {
-                        var shader = Shader.Find("Leonida/Facade");
+                        var shader = Shader.Find("Leonida/Facade2");
+                        if (shader == null) shader = Shader.Find("Leonida/Facade");
                         if (shader != null) _baseFacade = new Material(shader);
-                        Debug.LogWarning($"Leonida: Facade.mat missing, fallback shader={(_baseFacade != null ? _baseFacade.shader.name : "null")}");
+                        Debug.LogWarning($"Leonida: Facade2.mat missing, fallback shader={(_baseFacade != null ? _baseFacade.shader.name : "null")}");
                     }
                 }
                 return _baseFacade;
