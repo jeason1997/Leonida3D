@@ -45,7 +45,7 @@ namespace Leonida
             }
         }
 
-        void SetMode(Mode m)
+        public void SetMode(Mode m)
         {
             mode = m;
             if (_fly != null) _fly.enabled = m == Mode.Fly;
