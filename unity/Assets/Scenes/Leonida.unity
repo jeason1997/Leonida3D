@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &1119009590
+--- !u!1 &17571876
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,88 +127,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1119009594}
-  - component: {fileID: 1119009593}
-  - component: {fileID: 1119009592}
-  - component: {fileID: 1119009591}
-  m_Layer: 0
-  m_Name: LeonidaWorld
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1119009591
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1119009590}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6147ef2485df1f444af2c3eb84e0110d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Leonida.LeonidaEnvironment
-  cam: {fileID: 2008036414}
-  sun: {fileID: 1370528505}
---- !u!114 &1119009592
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1119009590}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c9968c334db80454f87d08a31f01d439, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Leonida.LeonidaScreenshot
-  path: 
-  settleSeconds: 2
-  timeoutSeconds: 180
---- !u!114 &1119009593
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1119009590}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 326a2f0eda724db4bb64e7d5374c6f14, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Leonida.LeonidaBootstrap
-  cam: {fileID: 2008036414}
-  sun: {fileID: 1370528505}
-  chunkRadius: 2
-  startPosition: {x: 150, y: 420, z: 1700}
-  lookTarget: {x: -2400, y: 30, z: 0}
---- !u!4 &1119009594
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1119009590}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1370528504
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1370528506}
-  - component: {fileID: 1370528505}
+  - component: {fileID: 17571878}
+  - component: {fileID: 17571877}
   m_Layer: 0
   m_Name: Sun
   m_TagString: Untagged
@@ -216,13 +136,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!108 &1370528505
+--- !u!108 &17571877
 Light:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1370528504}
+  m_GameObject: {fileID: 17571876}
   m_Enabled: 1
   serializedVersion: 12
   m_Type: 1
@@ -281,13 +201,13 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
---- !u!4 &1370528506
+--- !u!4 &17571878
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1370528504}
+  m_GameObject: {fileID: 17571876}
   serializedVersion: 2
   m_LocalRotation: {x: 0.38791165, y: -0.27470842, z: 0.12230807, w: 0.8712638}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -296,7 +216,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2008036413
+--- !u!1 &526370419
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -304,10 +224,90 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2008036417}
-  - component: {fileID: 2008036414}
-  - component: {fileID: 2008036416}
-  - component: {fileID: 2008036415}
+  - component: {fileID: 526370423}
+  - component: {fileID: 526370422}
+  - component: {fileID: 526370421}
+  - component: {fileID: 526370420}
+  m_Layer: 0
+  m_Name: LeonidaWorld
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &526370420
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 526370419}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6147ef2485df1f444af2c3eb84e0110d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Leonida.LeonidaEnvironment
+  cam: {fileID: 1732238175}
+  sun: {fileID: 17571877}
+--- !u!114 &526370421
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 526370419}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c9968c334db80454f87d08a31f01d439, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Leonida.LeonidaScreenshot
+  path: 
+  settleSeconds: 2
+  timeoutSeconds: 180
+--- !u!114 &526370422
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 526370419}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 326a2f0eda724db4bb64e7d5374c6f14, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Leonida.LeonidaBootstrap
+  cam: {fileID: 1732238175}
+  sun: {fileID: 17571877}
+  chunkRadius: 2
+  startPosition: {x: 150, y: 420, z: 1700}
+  lookTarget: {x: -2400, y: 30, z: 0}
+--- !u!4 &526370423
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 526370419}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1732238174
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1732238178}
+  - component: {fileID: 1732238175}
+  - component: {fileID: 1732238177}
+  - component: {fileID: 1732238176}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -315,13 +315,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!20 &2008036414
+--- !u!20 &1732238175
 Camera:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2008036413}
+  m_GameObject: {fileID: 1732238174}
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 1
@@ -366,38 +366,39 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!114 &2008036415
+--- !u!114 &1732238176
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2008036413}
+  m_GameObject: {fileID: 1732238174}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a57da659d90d7b042b673927dc9fa526, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Leonida.FlyCamera
-  moveSpeed: 120
-  boostMultiplier: 6
+  moveSpeed: 30
+  boostMultiplier: 4
   lookSensitivity: 0.11
   minPitch: -85
   maxPitch: 85
---- !u!81 &2008036416
+  terrain: {fileID: 0}
+--- !u!81 &1732238177
 AudioListener:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2008036413}
+  m_GameObject: {fileID: 1732238174}
   m_Enabled: 1
---- !u!4 &2008036417
+--- !u!4 &1732238178
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2008036413}
+  m_GameObject: {fileID: 1732238174}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -410,6 +411,6 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 2008036417}
-  - {fileID: 1370528506}
-  - {fileID: 1119009594}
+  - {fileID: 1732238178}
+  - {fileID: 17571878}
+  - {fileID: 526370423}
