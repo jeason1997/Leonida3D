@@ -179,8 +179,8 @@ namespace Leonida
             {
                 m = Lit(key, new Color(0.05f, 0.24f, 0.34f), 0.92f, 0.15f);
             }
-            if (m.HasProperty("_ShallowColor")) m.SetColor("_ShallowColor", new Color(0.10f, 0.52f, 0.58f, 1f));
-            if (m.HasProperty("_DeepColor")) m.SetColor("_DeepColor", new Color(0.015f, 0.16f, 0.26f, 1f));
+            if (m.HasProperty("_ShallowColor")) m.SetColor("_ShallowColor", new Color(0.13f, 0.60f, 0.66f, 1f));
+            if (m.HasProperty("_DeepColor")) m.SetColor("_DeepColor", new Color(0.02f, 0.17f, 0.27f, 1f));
             if (m.HasProperty("_SpecStrength")) m.SetFloat("_SpecStrength", 0.8f);
             m.enableInstancing = true;
             Cache[key] = m;
