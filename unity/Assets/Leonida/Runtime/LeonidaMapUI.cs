@@ -99,6 +99,8 @@ namespace Leonida
             if (_mapOpen) DrawFullMap();
             else DrawHint();
         }
+        Vector2? _waypoint;
+        Rect _mapRect;
         Texture2D _radarTex;
         Color32[] _radarPixels;
         Vector3 _radarLastPos;
@@ -179,7 +181,7 @@ namespace Leonida
             float scx = rect.x + rect.width * 0.5f;
             float scy = rect.y + rect.height * 0.62f;
             var arrow = new GUIStyle(_label) { fontSize = 20, alignment = TextAnchor.MiddleCenter };
-            GUI.Label(new Rect(scx - 14f, scy - 14f, 28f, 28f), "▲", arrow);
+            GUI.Label(new Rect(scx - 14f, scy - 14f, 28f, 28f), "\u25B2", arrow);
 
             // N on the rim, where north currently is.
             float nx = Mathf.Sin(-heading), ny = -Mathf.Cos(-heading);
@@ -190,6 +192,19 @@ namespace Leonida
             var nstyle = new GUIStyle(_label) { fontSize = 13, alignment = TextAnchor.MiddleCenter };
             GUI.Label(new Rect(scx + nx * rim - 10f, scy + ny * rim - 10f, 20f, 20f), "N", nstyle);
 
+            if (_waypoint.HasValue)
+            {
+                float we = _waypoint.Value.x - p.x;
+                float wn = _waypoint.Value.y - camNorth;
+                float wdx = we * Mathf.Cos(heading) - wn * Mathf.Sin(heading);
+                float wdy = -we * Mathf.Sin(heading) - wn * Mathf.Cos(heading);
+                float wx = Mathf.Clamp(scx + wdx / mpp, rect.x + 8f, rect.xMax - 8f);
+                float wy = Mathf.Clamp(scy + wdy / mpp, rect.y + 8f, rect.yMax - 8f);
+                var wstyle = new GUIStyle(_label) { fontSize = 18, alignment = TextAnchor.MiddleCenter };
+                GUI.color = new Color(1f, 0.85f, 0.2f);
+                GUI.Label(new Rect(wx - 10f, wy - 10f, 20f, 20f), "\u25C6", wstyle);
+                GUI.color = Color.white;
+            }
             GUI.color = new Color(0f, 0f, 0f, 0.55f);
             GUI.DrawTexture(new Rect(rect.x - 3f, rect.y - 3f, rect.width + 6f, 3f), Texture2D.whiteTexture);
             GUI.DrawTexture(new Rect(rect.x - 3f, rect.yMax, rect.width + 6f, 3f), Texture2D.whiteTexture);
@@ -210,10 +225,29 @@ namespace Leonida
             float mw = _map.width * scale;
             float mh = _map.height * scale;
             Rect r = new Rect((Screen.width - mw) * 0.5f, (Screen.height - mh) * 0.5f, mw, mh);
+            _mapRect = r;
             GUI.DrawTexture(r, _map, ScaleMode.StretchToFill, true);
 
-            GUI.Label(new Rect(28f, 20f, 600f, 40f), "LEONIDA  閻? MAP", _title);
-            GUI.Label(new Rect(28f, Screen.height - 40f, 900f, 24f), "M / Esc: close    1-7: teleport", _label);
+            var ev = Event.current;
+            if (ev != null && ev.type == EventType.MouseDown && r.Contains(ev.mousePosition))
+            {
+                float mx = Mathf.Lerp(_x0, _x1, (ev.mousePosition.x - r.x) / r.width);
+                float mn = Mathf.Lerp(_y1, _y0, (ev.mousePosition.y - r.y) / r.height);
+                if (ev.button == 0) _waypoint = new Vector2(mx, mn);
+                else if (ev.button == 1) _waypoint = null;
+            }
+            if (_waypoint.HasValue)
+            {
+                float wx = r.x + Mathf.InverseLerp(_x0, _x1, _waypoint.Value.x) * r.width;
+                float wy = r.y + Mathf.InverseLerp(_y1, _y0, _waypoint.Value.y) * r.height;
+                var wstyle = new GUIStyle(_label) { fontSize = 20, alignment = TextAnchor.MiddleCenter };
+                GUI.color = new Color(1f, 0.85f, 0.2f);
+                GUI.Label(new Rect(wx - 10f, wy - 10f, 20f, 20f), "\u25C6", wstyle);
+                GUI.color = Color.white;
+            }
+
+            GUI.Label(new Rect(28f, 20f, 600f, 40f), "LEONIDA  \u00b7  MAP", _title);
+            GUI.Label(new Rect(28f, Screen.height - 40f, 900f, 24f), "M / Esc: close    1-7: teleport    click: waypoint    right click: clear", _label);
 
             if (_manifest != null && _manifest.teleports != null)
             {
