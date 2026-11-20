@@ -9,6 +9,7 @@ namespace Leonida.EditorTools
         public static void Create()
         {
             System.IO.Directory.CreateDirectory("Assets/Leonida/Resources");
+            FixTexture("Assets/Leonida/Resources/Height16.png", false);
             FixTexture("Assets/Leonida/Resources/AOAtlas.png", false);
 
             var skyShader = Shader.Find("Leonida/Sky");

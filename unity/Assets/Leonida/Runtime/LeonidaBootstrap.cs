@@ -111,6 +111,7 @@ namespace Leonida
             if (environment != null) environment.Init(cam, sun);
 
             LeonidaAO.Configure(Manifest);
+            LeonidaWater.Configure(Manifest);
             CreateOcean();
             SetupPostProcessing();
 

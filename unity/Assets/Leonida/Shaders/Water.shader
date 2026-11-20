@@ -34,6 +34,9 @@ Shader "Leonida/Water"
 
             TEXTURE2D(_NormalMap);
             SAMPLER(sampler_NormalMap);
+            TEXTURE2D(_HeightTex);
+            SAMPLER(sampler_HeightTex);
+            float4 _HMap;
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _ShallowColor;
@@ -83,6 +86,11 @@ Shader "Leonida/Water"
 
             half4 frag (Varyings i) : SV_Target
             {
+                float2 mp = i.positionWS.xz;
+                float2 huv = float2((mp.x - _HMap.x) / _HMap.z, 1.0 - (_HMap.y - mp.y) / _HMap.w);
+                float ground = SAMPLE_TEXTURE2D(_HeightTex, sampler_HeightTex, saturate(huv)).r * 200.0 - 100.0;
+                float depth = max(0.05 - ground, 0.0);
+
                 float2 uv1 = i.positionWS.xz * _WaveScale + _Time.y * _Speed;
                 float2 uv2 = i.positionWS.xz * (_WaveScale * 2.7) - _Time.y * (_Speed * 1.4);
                 float3 n1 = SampleNormal(uv1);
@@ -94,7 +102,8 @@ Shader "Leonida/Water"
                 float3 V = GetWorldSpaceNormalizeViewDir(i.positionWS);
                 float fresnel = pow(1.0 - saturate(dot(N, V)), 4.0);
 
-                float3 baseCol = lerp(_DeepColor.rgb, _ShallowColor.rgb, saturate(0.55 - N.y * 0.1 + fresnel * 0.35));
+                float3 baseCol = lerp(_DeepColor.rgb, _ShallowColor.rgb,
+                    saturate(0.35 + (1.0 - saturate(depth / 9.0)) * 0.55 + fresnel * 0.2));
                 float3 ambient = SampleSH(N);
 
                 float4 shadowCoord = TransformWorldToShadowCoord(i.positionWS);
@@ -107,6 +116,17 @@ Shader "Leonida/Water"
                 float3 col = baseCol * (ambient + mainLight.color * ndl * mainLight.shadowAttenuation);
                 col += mainLight.color * spec * mainLight.shadowAttenuation;
                 col = lerp(col, _DeepColor.rgb + ambient * 0.35, fresnel * 0.65);
+
+                // shore foam: only the shallow band, using the original height map
+                float2 fuv = i.positionWS.xz * 0.03 + _Time.y * float2(0.010, 0.007);
+                float fn = SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, fuv).x;
+                float2 fuv2 = i.positionWS.xz * 0.11 - _Time.y * float2(0.014, 0.010);
+                float fn2 = SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, fuv2).y;
+                float shore = smoothstep(0.15, 1.2, depth) * (1.0 - smoothstep(1.2, 4.0, depth));
+                float foam = shore * smoothstep(0.42, 0.72, fn * 0.6 + fn2 * 0.6);
+                foam *= step(ground, 0.05);
+                col = lerp(col, float3(0.93, 0.97, 0.98), foam * 0.55);
+
                 col = MixFog(col, i.fogFactor);
 
                 return half4(col, 1.0);
