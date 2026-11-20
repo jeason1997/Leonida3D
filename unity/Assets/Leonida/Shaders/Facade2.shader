@@ -148,10 +148,10 @@ Shader "Leonida/Facade2"
                 float style = floor(vS.x);
                 float gSeed = frac(vS.x);
                 float seed = gSeed;
-                float H = max(1.0 - vS.y, 3.0);
+                float H = 300.0;
                 float u = vF.x;
                 float z = max(worldY, 0.0);
-                float halfL = max(vL.x, 0.5);
+                float halfL = 1000.0;
                 float gAa = max(max(abs(ddx(u)) + abs(ddy(u)), abs(ddx(z)) + abs(ddy(z))), 0.003);
                 float aa = gAa;
                 float r1 = frac(seed * 13.17);
@@ -436,20 +436,6 @@ Shader "Leonida/Facade2"
                 FacadeColor(float2(wallU, 0.0), input.uvS, input.uvL, positionWS.y, _Night, albedo, rough, metal, emission);
                 float wallTone = frac(input.uvS.x * 17.31);
                 albedo *= lerp(float3(1.0, 1.0, 1.0), float3(0.90, 0.86, 0.80), wallTone * 0.55);
-
-                // Deterministic world-space window grid (the imported facade UV
-                // parameters do not produce coverage in the player).
-                float2 wcell = float2(wallU / 12.0, positionWS.y / 6.0);
-                float2 wf = frac(wcell);
-                float winX = step(0.30, wf.x) * (1.0 - step(0.70, wf.x));
-                float winY = step(0.32, wf.y) * (1.0 - step(0.72, wf.y));
-                float win = winX * winY;
-                float frame = (step(0.24, wf.x) * (1.0 - step(0.76, wf.x))
-                             * step(0.34, wf.y) * (1.0 - step(0.82, wf.y))) - win;
-                float wdist = length(_WorldSpaceCameraPos - positionWS);
-                float wfade = 1.0 - smoothstep(6000.0, 12000.0, wdist);
-                albedo = lerp(albedo, float3(0.55, 0.57, 0.57), saturate(frame) * 0.0 * wfade);
-                albedo = lerp(albedo, float3(0.035, 0.075, 0.11), win * 0.92 * wfade);
 
                 // Reference/js/materials.js WALL_AO: ground AO just outside the wall,
                 // fading out with height, plus a contact shadow at the foot.
