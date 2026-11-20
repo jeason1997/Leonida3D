@@ -56,6 +56,15 @@ Shader "Leonida/Facade"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
+            TEXTURE2D(_AOTex); SAMPLER(sampler_AOTex);
+            float4 _AORect;
+            float AoAt(float2 mp)
+            {
+                float2 uv = float2((mp.x - _AORect.x) / _AORect.z, 1.0 - (_AORect.y - mp.y) / _AORect.w);
+                if (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0) return 1.0;
+                return pow(SAMPLE_TEXTURE2D(_AOTex, sampler_AOTex, uv).r, 1.5);
+            }
+
             CBUFFER_START(UnityPerMaterial)
                 float _Night;
             CBUFFER_END
@@ -420,6 +429,13 @@ Shader "Leonida/Facade"
                 float3 emission;
                 FacadeColor(input.uvF, input.uvS, input.uvL, _Night, albedo, rough, metal, emission);
 
+                // Reference/js/materials.js WALL_AO: ground AO just outside the wall,
+                // fading out with height, plus a contact shadow at the foot.
+                float2 outward = normalize(normalWS.xz + 1e-4);
+                float ao = AoAt(float2(positionWS.x, -positionWS.z) + outward * 2.5);
+                ao = lerp(ao, 1.0, smoothstep(0.0, 20.0, positionWS.y));
+                ao *= lerp(0.72, 1.0, smoothstep(0.0, 1.5, positionWS.y));
+
                 SurfaceData surfaceData = (SurfaceData)0;
                 surfaceData.albedo = albedo;
                 surfaceData.specular = half3(0.0, 0.0, 0.0);
@@ -427,7 +443,7 @@ Shader "Leonida/Facade"
                 surfaceData.smoothness = 1.0 - saturate(rough);
                 surfaceData.normalTS = float3(0.0, 0.0, 1.0);
                 surfaceData.emission = emission;
-                surfaceData.occlusion = 1.0;
+                surfaceData.occlusion = ao;
                 surfaceData.alpha = 1.0;
                 surfaceData.clearCoatMask = 0.0;
                 surfaceData.clearCoatSmoothness = 0.0;
@@ -448,6 +464,7 @@ Shader "Leonida/Facade"
                 inputData.shadowMask = half4(1.0, 1.0, 1.0, 1.0);
 
                 half4 color = UniversalFragmentPBR(inputData, surfaceData);
+                color.rgb *= lerp(1.0, ao, 0.75);
                 color.rgb = MixFog(color.rgb, inputData.fogCoord);
                 color.a = 1.0;
                 return color;

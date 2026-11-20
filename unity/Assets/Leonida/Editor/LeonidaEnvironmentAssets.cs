@@ -9,6 +9,7 @@ namespace Leonida.EditorTools
         public static void Create()
         {
             System.IO.Directory.CreateDirectory("Assets/Leonida/Resources");
+            FixTexture("Assets/Leonida/Resources/AOAtlas.png", false);
 
             var skyShader = Shader.Find("Leonida/Sky");
             if (skyShader != null && AssetDatabase.LoadAssetAtPath<Material>("Assets/Leonida/Resources/LeonidaSky.mat") == null)
@@ -86,6 +87,16 @@ namespace Leonida.EditorTools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log("LEONIDA_ENV_OK");
+        }
+
+        static void FixTexture(string path, bool sRGB)
+        {
+            var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer == null) return;
+            importer.sRGBTexture = sRGB;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.maxTextureSize = 2048;
+            importer.SaveAndReimport();
         }
     }
 }

@@ -32,6 +32,15 @@ Shader "Leonida/Detail"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
+            TEXTURE2D(_AOTex); SAMPLER(sampler_AOTex);
+            float4 _AORect;
+            float AoAt(float2 mp)
+            {
+                float2 uv = float2((mp.x - _AORect.x) / _AORect.z, 1.0 - (_AORect.y - mp.y) / _AORect.w);
+                if (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0) return 1.0;
+                return pow(SAMPLE_TEXTURE2D(_AOTex, sampler_AOTex, uv).r, 1.5);
+            }
+
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseColor;
             CBUFFER_END
@@ -106,7 +115,9 @@ Shader "Leonida/Detail"
                 surfaceData.smoothness = 0.18;   // roughness 0.82 in the web material
                 surfaceData.normalTS = float3(0.0, 0.0, 1.0);
                 surfaceData.emission = 0.0;
-                surfaceData.occlusion = 1.0;
+                float ao = AoAt(float2(wp.x, -wp.z));
+                ao = lerp(1.0, ao, 0.5);
+                surfaceData.occlusion = ao;
                 surfaceData.alpha = 1.0;
 
                 InputData inputData = (InputData)0;
@@ -122,6 +133,7 @@ Shader "Leonida/Detail"
                 inputData.shadowMask = half4(1.0, 1.0, 1.0, 1.0);
 
                 half4 color = UniversalFragmentPBR(inputData, surfaceData);
+                color.rgb *= lerp(1.0, ao, 0.7);
                 color.rgb = MixFog(color.rgb, inputData.fogCoord);
                 return color;
             }

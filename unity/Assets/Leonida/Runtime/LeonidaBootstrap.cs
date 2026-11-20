@@ -110,6 +110,7 @@ namespace Leonida
             var environment = GetComponent<LeonidaEnvironment>();
             if (environment != null) environment.Init(cam, sun);
 
+            LeonidaAO.Configure(Manifest);
             CreateOcean();
             SetupPostProcessing();
 
