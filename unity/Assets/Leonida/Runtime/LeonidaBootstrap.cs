@@ -196,7 +196,7 @@ namespace Leonida
             var color = profile.Add<ColorAdjustments>(true);
             color.contrast.Override(10f);
             color.saturation.Override(6f);
-            color.postExposure.Override(0.15f);
+            color.postExposure.Override(0f);
 
             var bloom = profile.Add<Bloom>(true);
             bloom.intensity.Override(0.15f);
