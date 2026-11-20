@@ -14,6 +14,7 @@ namespace Leonida.EditorTools
         public static void Build()
         {
             Directory.CreateDirectory("Assets/Scenes");
+            LeonidaEnvironmentAssets.Create();
 
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -42,6 +43,9 @@ namespace Leonida.EditorTools
             boot.sun = sun;
             boot.chunkRadius = 2;
             worldGo.AddComponent<LeonidaScreenshot>();
+            var env = worldGo.AddComponent<LeonidaEnvironment>();
+            env.cam = cam;
+            env.sun = sun;
 
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
             RenderSettings.ambientLight = new Color(0.46f, 0.50f, 0.55f);

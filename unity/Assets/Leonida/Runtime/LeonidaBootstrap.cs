@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -25,6 +26,7 @@ namespace Leonida
         string _assetsRoot;
         int _chunksLoaded;
         int _chunksTotal;
+        LeonidaVegetation _veg;
 
         async void Start()
         {
@@ -42,6 +44,8 @@ namespace Leonida
 
         async Task LoadAsync()
         {
+            ApplyCommandLineCamera();
+
             _assetsRoot = Path.Combine(Application.streamingAssetsPath, "leonida", "assets");
             if (!File.Exists(Path.Combine(_assetsRoot, "manifest.json")))
             {
@@ -96,6 +100,9 @@ namespace Leonida
             RenderSettings.fogDensity = 0.00007f;
             RenderSettings.fogColor = new Color(0.62f, 0.72f, 0.82f);
 
+            var environment = GetComponent<LeonidaEnvironment>();
+            if (environment != null) environment.Init(cam, sun);
+
             CreateOcean();
 
             Status = "building terrain";
@@ -118,13 +125,49 @@ namespace Leonida
 
             _chunksLoaded = chunks.Loaded;
             _chunksTotal = chunks.Total;
+
+            Status = "loading vegetation";
+            string vegStatus = "veg off";
+            try
+            {
+                _veg = gameObject.AddComponent<LeonidaVegetation>();
+                _veg.cam = cam;
+                await _veg.Init(Manifest, _assetsRoot,
+                    (done, total, name) => Status = $"loading vegetation {done}/{total}  ({name})");
+                vegStatus = $"veg t{_veg.TreeInstances} s{_veg.ShrubInstances} g{_veg.GrassInstances}  vegchunks {_veg.LoadedChunks}";
+            }
+            catch (Exception e)
+            {
+                // Vegetation is optional: the map and city must still come up without it.
+                Debug.LogError("Leonida: vegetation failed: " + e);
+                vegStatus = "veg failed";
+                _veg = null;
+            }
+
             Ready = true;
-            Status = $"READY  terrain chunks {terrain.ChunkCount}  city tiles {_chunksLoaded}/{_chunksTotal}";
+            Status = $"READY  terrain chunks {terrain.ChunkCount}  city tiles {_chunksLoaded}/{_chunksTotal}  {vegStatus}";
             Debug.Log("Leonida: " + Status);
         }
 
-        void CreateOcean()
+        void ApplyCommandLineCamera()
         {
+            var args = Environment.GetCommandLineArgs();
+            float Arg(string name, float fallback)
+            {
+                int i = Array.IndexOf(args, name);
+                if (i >= 0 && i + 1 < args.Length &&
+                    float.TryParse(args[i + 1], NumberStyles.Float, CultureInfo.InvariantCulture, out float v))
+                    return v;
+                return fallback;
+            }
+
+            if (Array.IndexOf(args, "-camx") >= 0 || Array.IndexOf(args, "-camy") >= 0 || Array.IndexOf(args, "-camz") >= 0)
+                startPosition = new Vector3(Arg("-camx", startPosition.x), Arg("-camy", startPosition.y), Arg("-camz", startPosition.z));
+            if (Array.IndexOf(args, "-lookx") >= 0 || Array.IndexOf(args, "-looky") >= 0 || Array.IndexOf(args, "-lookz") >= 0)
+                lookTarget = new Vector3(Arg("-lookx", lookTarget.x), Arg("-looky", lookTarget.y), Arg("-lookz", lookTarget.z));
+        }
+
+        void CreateOcean()        {
             if (GameObject.Find("Ocean") != null) return;
             var go = GameObject.CreatePrimitive(PrimitiveType.Plane);
             go.name = "Ocean";
@@ -146,9 +189,15 @@ namespace Leonida
                 fontStyle = FontStyle.Bold,
                 normal = { textColor = Ready ? Color.white : new Color(1f, 0.9f, 0.6f) },
             };
-            GUI.Box(new Rect(12, 12, 620, 58), GUIContent.none);
-            GUI.Label(new Rect(22, 18, 600, 24), "LEONIDA 3D — Unity native port", style);
-            GUI.Label(new Rect(22, 42, 600, 22), Status, style);
+            GUI.Box(new Rect(12, 12, 920, 86), GUIContent.none);
+            GUI.Label(new Rect(22, 18, 900, 24), "LEONIDA 3D — Unity native port", style);
+            GUI.Label(new Rect(22, 42, 900, 22), Status, style);
+            if (_veg != null)
+            {
+                GUI.Label(new Rect(22, 66, 900, 22),
+                    $"veg  t{_veg.TreeInstances}  s{_veg.ShrubInstances}  g{_veg.GrassInstances}   chunks {_veg.LoadedChunks}  variants {_veg.LoadedVariants}",
+                    style);
+            }
             if (Ready)
             {
                 GUI.Label(new Rect(12, Screen.height - 34, 900, 22),

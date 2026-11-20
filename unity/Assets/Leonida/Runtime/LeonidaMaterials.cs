@@ -7,6 +7,8 @@ namespace Leonida
     {
         static readonly Dictionary<string, Material> Cache = new Dictionary<string, Material>();
         static Material _baseLit;
+        static Material _baseWater;
+        static Material _baseFacade;
 
         static Material BaseLit
         {
@@ -14,6 +16,42 @@ namespace Leonida
             {
                 if (_baseLit == null) _baseLit = Resources.Load<Material>("URPLit");
                 return _baseLit;
+            }
+        }
+
+        static Material BaseWater
+        {
+            get
+            {
+                if (_baseWater == null)
+                {
+                    _baseWater = Resources.Load<Material>("Water");
+                    if (_baseWater == null)
+                    {
+                        var shader = Shader.Find("Leonida/Water");
+                        if (shader != null) _baseWater = new Material(shader);
+                        Debug.LogWarning($"Leonida: Water.mat missing, fallback shader={(_baseWater != null ? _baseWater.shader.name : "null")}");
+                    }
+                }
+                return _baseWater;
+            }
+        }
+
+        static Material BaseFacade
+        {
+            get
+            {
+                if (_baseFacade == null)
+                {
+                    _baseFacade = Resources.Load<Material>("Facade");
+                    if (_baseFacade == null)
+                    {
+                        var shader = Shader.Find("Leonida/Facade");
+                        if (shader != null) _baseFacade = new Material(shader);
+                        Debug.LogWarning($"Leonida: Facade.mat missing, fallback shader={(_baseFacade != null ? _baseFacade.shader.name : "null")}");
+                    }
+                }
+                return _baseFacade;
             }
         }
 
@@ -62,7 +100,7 @@ namespace Leonida
         {
             string n = gltfName ?? string.Empty;
             if (n.StartsWith("Building_Wall"))
-                return Lit("Building_Wall", new Color(0.76f, 0.73f, 0.66f), 0.22f);
+                return Facade();
             if (n.StartsWith("Building_Roof"))
                 return Lit("Building_Roof", new Color(0.31f, 0.31f, 0.30f), 0.18f);
             if (n.StartsWith("Road_highway"))
@@ -82,8 +120,44 @@ namespace Leonida
             if (n.StartsWith("RS_Pier"))
                 return Lit("RS_Pier", new Color(0.42f, 0.35f, 0.28f), 0.10f);
             if (n.StartsWith("Water"))
-                return Lit("Water", new Color(0.05f, 0.24f, 0.34f), 0.92f, 0.15f);
+                return Water();
             return Lit("Building_Wall", new Color(0.76f, 0.73f, 0.66f), 0.22f);
+        }
+
+        static Material Water()
+        {
+            const string key = "Water";
+            if (Cache.TryGetValue(key, out var cached)) return cached;
+
+            Material m;
+            if (BaseWater != null)
+            {
+                m = new Material(BaseWater) { name = key };
+            }
+            else
+            {
+                m = Lit(key, new Color(0.05f, 0.24f, 0.34f), 0.92f, 0.15f);
+            }
+            m.enableInstancing = true;
+            Cache[key] = m;
+            return m;
+        }
+
+        static Material Facade()
+        {
+            const string key = "Building_Wall";
+            if (Cache.TryGetValue(key, out var cached)) return cached;
+
+            if (BaseFacade == null)
+            {
+                return Lit(key, new Color(0.76f, 0.73f, 0.66f), 0.22f);
+            }
+
+            var m = new Material(BaseFacade) { name = key };
+            m.SetFloat("_Night", 0f);
+            m.enableInstancing = true;
+            Cache[key] = m;
+            return m;
         }
     }
 }

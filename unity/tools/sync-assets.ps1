@@ -1,7 +1,7 @@
 # Copies the single shared asset tree into Unity's StreamingAssets.
 # Run this before building a Windows/Android player (the editor can use web/site/assets directly).
 $ErrorActionPreference = "Stop"
-$repo = Split-Path -Parent $PSScriptRoot
+$repo = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $src = Join-Path $repo "web\site\assets"
 $dst = Join-Path $repo "unity\Assets\StreamingAssets\leonida\assets"
 

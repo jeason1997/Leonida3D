@@ -79,6 +79,7 @@ namespace Leonida
                     }
                     else
                     {
+                        MirrorX(chunkGo);
                         ApplyMaterials(chunkGo);
                         _imports.Add(gltf);
                     }
@@ -95,27 +96,76 @@ namespace Leonida
             }
         }
 
+        // glTFast converts glTF's right-handed X to Unity's left-handed space by mirroring X.
+        // The city GLBs are authored in the map frame (x east, z = -north), so mirror the baked
+        // meshes back and flip the triangle winding to keep front faces outside.
+        void MirrorX(GameObject root)
+        {
+            var filters = root.GetComponentsInChildren<MeshFilter>(true);
+            foreach (var filter in filters)
+            {
+                var source = filter.sharedMesh;
+                if (source == null) continue;
+
+                var mesh = Instantiate(source);
+                mesh.name = source.name + "_map";
+
+                var vertices = mesh.vertices;
+                for (int i = 0; i < vertices.Length; i++) vertices[i].x = -vertices[i].x;
+                mesh.vertices = vertices;
+
+                var normals = mesh.normals;
+                if (normals != null && normals.Length == vertices.Length)
+                {
+                    for (int i = 0; i < normals.Length; i++) normals[i].x = -normals[i].x;
+                    mesh.normals = normals;
+                }
+
+                var tangents = mesh.tangents;
+                if (tangents != null && tangents.Length == vertices.Length)
+                {
+                    for (int i = 0; i < tangents.Length; i++) tangents[i].x = -tangents[i].x;
+                    mesh.tangents = tangents;
+                }
+
+                var triangles = mesh.triangles;
+                for (int i = 0; i + 2 < triangles.Length; i += 3)
+                {
+                    int tmp = triangles[i];
+                    triangles[i] = triangles[i + 1];
+                    triangles[i + 1] = tmp;
+                }
+                mesh.triangles = triangles;
+                mesh.RecalculateBounds();
+                filter.sharedMesh = mesh;
+            }
+        }
+
         void ApplyMaterials(GameObject root)
         {
             var renderers = root.GetComponentsInChildren<MeshRenderer>(true);
             foreach (var r in renderers)
             {
+                var filter = r.GetComponent<MeshFilter>();
+                string meshName = filter != null && filter.sharedMesh != null ? filter.sharedMesh.name : string.Empty;
+
                 var materials = r.sharedMaterials;
                 bool building = false;
                 if (materials == null || materials.Length == 0)
                 {
-                    r.sharedMaterial = LeonidaMaterials.For(string.Empty);
+                    r.sharedMaterial = Resolve(meshName, 0, string.Empty);
                     building = true;
                 }
                 else
                 {
-                    // A chunk mesh has one submesh per glTF primitive; replace every slot,
-                    // otherwise the untouched slots keep glTFast's build-stripped shader (pink).
+                    // glTFast rewrites material names, so use the stable mesh/primitive layout instead:
+                    // Buildings/Filler [wall, roof], Roads [highway, road, dirt],
+                    // RoadSides [sidewalk, kerb, concrete, barrier, pier], Water/OpenSea [water].
                     for (int i = 0; i < materials.Length; i++)
                     {
-                        string name = materials[i] != null ? materials[i].name : string.Empty;
-                        if (name.StartsWith("Building_")) building = true;
-                        materials[i] = LeonidaMaterials.For(name);
+                        string original = materials[i] != null ? materials[i].name : string.Empty;
+                        materials[i] = Resolve(meshName, i, original);
+                        if (meshName.StartsWith("Buildings") || meshName.StartsWith("Filler")) building = true;
                     }
                     r.sharedMaterials = materials;
                 }
@@ -124,6 +174,36 @@ namespace Leonida
                 r.lightProbeUsage = LightProbeUsage.Off;
                 r.reflectionProbeUsage = ReflectionProbeUsage.Off;
             }
+        }
+
+        static Material Resolve(string meshName, int slot, string originalName)
+        {
+            if (meshName.StartsWith("Water") || meshName.StartsWith("OpenSea"))
+                return LeonidaMaterials.For("Water");
+
+            if (meshName.StartsWith("Buildings") || meshName.StartsWith("Filler"))
+                return LeonidaMaterials.For(slot == 0 ? "Building_Wall" : "Building_Roof");
+
+            if (meshName.StartsWith("Roads"))
+            {
+                if (slot == 0) return LeonidaMaterials.For("Road_highway");
+                if (slot == 1) return LeonidaMaterials.For("Road_road");
+                return LeonidaMaterials.For("Road_dirt");
+            }
+
+            if (meshName.StartsWith("RoadSides"))
+            {
+                switch (slot)
+                {
+                    case 0: return LeonidaMaterials.For("RS_Sidewalk");
+                    case 1: return LeonidaMaterials.For("RS_Kerb");
+                    case 2: return LeonidaMaterials.For("RS_Concrete");
+                    case 3: return LeonidaMaterials.For("RS_Barrier");
+                    default: return LeonidaMaterials.For("RS_Pier");
+                }
+            }
+
+            return LeonidaMaterials.For(originalName);
         }
 
         void OnDestroy()

@@ -55,16 +55,21 @@ Or use the editor menu `Leonida > Build Scene + Windows Player` after syncing.
 ### Implemented
 
 - manifest, far terrain (110 chunks / 464,750 vertices)
-- runtime GLB streaming via glTFast
-- material mapping for walls, roofs, roads, sidewalks, water
-- ocean plane, directional light, shadows, fog, fly camera, loading HUD
+- runtime GLB streaming via glTFast, with the glTF→Unity X-axis mirror corrected
+- material mapping by mesh/primitive: walls, roofs, roads, sidewalks, water
+- facade shader ported from the web build (six facade styles, windows, frames,
+  balconies, grime, night-lit rooms), water shader, sky shader
+- vegetation: 21 GLB variants, `veg/inst_*.bin` instancing (trees / shrubs / grass)
+- ocean, directional light, shadows, fog, fly camera, loading HUD
 - scene/player build menu
 
 ### Roadmap
 
-- [ ] port facade / water / sky / AO shaders from the web build
-- [ ] vegetation (`veg/inst_*.bin`, impostors)
-- [ ] roof details (`det_*.bin`)
+- [x] facade / water / sky shaders
+- [x] vegetation (`veg/inst_*.bin`)
+- [ ] roof detail shader and roof props (`det_*.bin`)
+- [ ] baked AO (`ao_*.webp`)
+- [ ] far vegetation billboards / impostors
 - [ ] minimap, full map, admin panel, teleports
 - [ ] walk / car / plane modes
 - [ ] Android / iOS export
