@@ -17,6 +17,7 @@ namespace Leonida
         float _radarMeters = 1600f;
         bool _mapOpen;
         public bool Hidden;
+        public bool IsOpen => _mapOpen;
         readonly Dictionary<string, Texture2D> _tiles = new Dictionary<string, Texture2D>();
         public void SetOpen(bool open) { _mapOpen = open; LeonidaCursor.UiOpen = open; if (open) LeonidaCursor.Unlock(); }
         GUIStyle _label;
@@ -114,9 +115,11 @@ namespace Leonida
             float west = _manifest != null ? _manifest.west : _x0;
             float north = _manifest != null ? _manifest.north : _y1;
 
-            GUI.BeginClip(rect);
+            GUI.BeginGroup(rect);
+            Matrix4x4 oldMatrix = GUI.matrix;
             Vector2 c = new Vector2(rect.width * 0.5f, rect.height * 0.62f);
-            // North-up radar: the map never rotates; only the player arrow turns.
+            // Rotate the map in local group space; BeginGroup provides the hard clip to the radar rect.
+            GUI.matrix = Matrix4x4.TRS(new Vector3(c.x, c.y, 0f), Quaternion.Euler(0f, 0f, -heading), Vector3.one);
 
             float R = Mathf.Sqrt(rect.width * rect.width + rect.height * rect.height) * mpp;
             int i0 = Mathf.FloorToInt((p.x - R - west) / C), i1 = Mathf.FloorToInt((p.x + R - west) / C);
@@ -128,26 +131,33 @@ namespace Leonida
                     if (!_tiles.TryGetValue($"{i}_{j}", out var tex) || tex == null) continue;
                     float mx = west + i * C + C * 0.5f;
                     float mn = north - j * C - C * 0.5f;
-                    float sx = c.x + (mx - p.x) * k;
-                    float sy = c.y - (mn - camNorth) * k;
+                    float sx = (mx - p.x) * k;
+                    float sy = -(mn - camNorth) * k;
                     GUI.DrawTexture(new Rect(sx - C * k * 0.5f, sy - C * k * 0.5f, C * k, C * k), tex, ScaleMode.StretchToFill, false);
                 }
             }
 
-            var arrow = new GUIStyle(_label) { fontSize = 20, alignment = TextAnchor.MiddleCenter };
-            GUI.EndClip();
+            GUI.matrix = oldMatrix;
+            GUI.EndGroup();
 
-            // North-up map, heading-up arrow. Rotate only the glyph.
+            // Player arrow stays up; the map turns underneath it.
             float cx = rect.x + rect.width * 0.5f;
             float cy = rect.y + rect.height * 0.62f;
-            GUIUtility.RotateAroundPivot(heading, new Vector2(cx, cy));
+            var arrow = new GUIStyle(_label) { fontSize = 20, alignment = TextAnchor.MiddleCenter };
             GUI.Label(new Rect(cx - 14f, cy - 14f, 28f, 28f), "▲", arrow);
-            GUIUtility.RotateAroundPivot(-heading, new Vector2(cx, cy));
 
+            // N on the rim, where north currently is.
+            float rad = heading * Mathf.Deg2Rad;
+            float nx = Mathf.Sin(-rad), ny = -Mathf.Cos(-rad);
+            float sx2 = nx > 0f ? (rect.width - 12f - c.x) / nx : nx < 0f ? (12f - c.x) / nx : float.PositiveInfinity;
+            float sy2 = ny > 0f ? (rect.height - 12f - c.y) / ny : ny < 0f ? (12f - c.y) / ny : float.PositiveInfinity;
+            float rim = Mathf.Min(sx2, sy2);
             var nstyle = new GUIStyle(_label) { fontSize = 13, alignment = TextAnchor.MiddleCenter };
-            GUI.Label(new Rect(cx - 10f, rect.y + 4f, 20f, 20f), "N", nstyle);
+            GUI.Label(new Rect(cx + nx * rim - 10f, cy + ny * rim - 10f, 20f, 20f), "N", nstyle);
 
             GUI.color = new Color(0f, 0f, 0f, 0.55f);
+            GUI.DrawTexture(new Rect(rect.x - 3f, rect.y - 3f, rect.width + 6f, 3f), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(rect.x - 3f, rect.yMax, rect.width + 6f, 3f), Texture2D.whiteTexture);
             GUI.DrawTexture(new Rect(rect.x - 3f, rect.y - 3f, 3f, rect.height + 6f), Texture2D.whiteTexture);
             GUI.DrawTexture(new Rect(rect.xMax, rect.y - 3f, 3f, rect.height + 6f), Texture2D.whiteTexture);
             GUI.color = Color.white;
@@ -167,7 +177,7 @@ namespace Leonida
             Rect r = new Rect((Screen.width - mw) * 0.5f, (Screen.height - mh) * 0.5f, mw, mh);
             GUI.DrawTexture(r, _map, ScaleMode.StretchToFill, true);
 
-            GUI.Label(new Rect(28f, 20f, 600f, 40f), "LEONIDA  璺? MAP", _title);
+            GUI.Label(new Rect(28f, 20f, 600f, 40f), "LEONIDA  鐠? MAP", _title);
             GUI.Label(new Rect(28f, Screen.height - 40f, 900f, 24f), "M / Esc: close    1-7: teleport", _label);
 
             if (_manifest != null && _manifest.teleports != null)
@@ -194,6 +204,8 @@ namespace Leonida
             if (_manifest == null || _manifest.teleports == null || index < 0 || index >= _manifest.teleports.Count) return;
             var t = _manifest.teleports[index];
             if (_cam == null) return;
+            var modes = _cam.GetComponent<LeonidaPlayerModes>();
+            if (modes != null) modes.SetMode(LeonidaPlayerModes.Mode.Fly);
 
             _cam.transform.position = new Vector3(t.x, t.z, -t.y);
             float h = t.heading * Mathf.Deg2Rad;
