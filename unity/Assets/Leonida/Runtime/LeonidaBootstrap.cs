@@ -124,6 +124,8 @@ namespace Leonida
             var terrain = gameObject.AddComponent<LeonidaTerrain>();
             terrain.Build(Manifest, _assetsRoot);
             terrain.BuildNear(Manifest, _assetsRoot, ci, cj, 2);
+            var modes = cam.gameObject.AddComponent<LeonidaPlayerModes>();
+            modes.Init(cam, terrain);
 
             Status = $"loading chunks around {ci}_{cj}";
 
@@ -257,7 +259,7 @@ namespace Leonida
                 normal = { textColor = Ready ? Color.white : new Color(1f, 0.9f, 0.6f) },
             };
             GUI.Box(new Rect(12, 12, 920, 86), GUIContent.none);
-            GUI.Label(new Rect(22, 18, 900, 24), "LEONIDA 3D 閳?Unity native port", style);
+            GUI.Label(new Rect(22, 18, 900, 24), "LEONIDA 3D 闁?Unity native port", style);
             GUI.Label(new Rect(22, 42, 900, 22), Status, style);
             if (_veg != null)
             {
