@@ -291,7 +291,7 @@ namespace Leonida
             }
             if (Ready)
             {
-                GUI.Label(new Rect(12, Screen.height - 34, 900, 22),
+                GUI.Label(new Rect(12, Screen.height - 34, Screen.width - 24, 22),
                     "WASD move   Q/E height   click: mouse   Shift boost   F1-F4 modes   M map   F8 admin", style);
             }
         }

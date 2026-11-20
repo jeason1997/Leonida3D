@@ -54,7 +54,7 @@ namespace Leonida
                 _title.normal.textColor = new Color(1f, 0.93f, 0.78f);
                 _sub = new GUIStyle(GUI.skin.label)
                 {
-                    fontSize = 20, alignment = TextAnchor.MiddleCenter,
+                    fontSize = 16, alignment = TextAnchor.MiddleCenter,
                 };
                 _sub.normal.textColor = new Color(0.9f, 0.95f, 1f);
                 _label = new GUIStyle(GUI.skin.label) { fontSize = 16 };
@@ -80,8 +80,8 @@ namespace Leonida
             if (_boot != null && !ready)
                 GUI.Label(new Rect(cx - 420f, y + 300f, 840f, 30f), _boot.Status, _sub);
 
-            GUI.Label(new Rect(cx - 420f, Screen.height - 90f, 840f, 30f),
-                "WASD move   Q/E height   right mouse drag look   M map   F1 fly / F2 walk / F3 drive / F4 plane", _sub);
+            GUI.Label(new Rect(cx - 600f, Screen.height - 52f, 1200f, 28f),
+                "WASD move   Q/E height   click to look   M map   F1 fly / F2 walk / F3 drive / F4 plane", _sub);
         }
     }
 }
