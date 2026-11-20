@@ -1,6 +1,6 @@
 # Unity port status
 
-Last updated after commit `edad28f`.
+Last updated after commit `ac65b3d`.
 
 ## Verified by build only
 
@@ -18,9 +18,9 @@ Do not call these finished until a real run confirms them.
 
 ## Known open issues
 
-- minimap rotates again; group clipping was added, still needs a real screenshot check
+- minimap is rendered into a fixed image and sampled from 1024 tiles; default rotation is flipped, `R` toggles it, still needs a real screenshot check
 - mouse yaw sign corrected to Unity camera basis (`edad28f`), still needs a real feel check
-- car can spawn inside a building when switching from fly at altitude
+- car now spawns at Vice Beach when switching from high altitude; needs a real check
 - plane/walk/car feel still needs comparison against `Reference/js/player.js`
 - start screen bottom control line overlaps the debug HUD text
 - mobile/touch controls are not implemented
@@ -30,7 +30,7 @@ Do not call these finished until a real run confirms them.
 ## Render state
 
 - facade: full `materials.js` port, facade height/clip fixed
-- roof: `ROOF_FRAG_COLOR` kinds 0鈥?
+- roof: `ROOF_FRAG_COLOR` kinds 0閳?
 - sky: `Sky.js` Preetham + `SKY_CLOUDS`
 - detail: `DETAIL_FRAG_COLOR`
 - AO: `ao_*.webp` atlas applied to facade/roof/detail
