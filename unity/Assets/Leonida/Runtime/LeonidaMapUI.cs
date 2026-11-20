@@ -101,6 +101,9 @@ namespace Leonida
         }
         Texture2D _radarTex;
         Color32[] _radarPixels;
+        Vector3 _radarLastPos;
+        float _radarLastHeading;
+        int _radarLastW, _radarLastH;
 
         void DrawRadar(Rect rect)
         {
@@ -117,6 +120,15 @@ namespace Leonida
                 _radarTex = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
                 _radarPixels = new Color32[w * h];
             }
+
+            bool dirty = _radarLastW != w || _radarLastH != h
+                      || (p - _radarLastPos).sqrMagnitude > 0.25f
+                      || Mathf.Abs(Mathf.DeltaAngle(_radarLastHeading, heading * Mathf.Rad2Deg)) > 0.5f;
+            if (dirty)
+            {
+                _radarLastPos = p;
+                _radarLastHeading = heading * Mathf.Rad2Deg;
+                _radarLastW = w; _radarLastH = h;
 
             Color32 water = new Color32(35, 64, 86, 255);
             float cx = w * 0.5f, cy = h * 0.62f;
@@ -144,6 +156,7 @@ namespace Leonida
 
             _radarTex.SetPixels32(_radarPixels);
             _radarTex.Apply(false);
+            }
             GUI.DrawTexture(rect, _radarTex, ScaleMode.StretchToFill, false);
 
             // Player arrow stays up; the map image itself is already heading-up.
@@ -154,8 +167,9 @@ namespace Leonida
 
             // N on the rim, where north currently is.
             float nx = Mathf.Sin(-heading), ny = -Mathf.Cos(-heading);
-            float sx2 = nx > 0f ? (rect.width - 12f - cx) / nx : nx < 0f ? (12f - cx) / nx : float.PositiveInfinity;
-            float sy2 = ny > 0f ? (rect.height - 12f - cy) / ny : ny < 0f ? (12f - cy) / ny : float.PositiveInfinity;
+            float cw = rect.width * 0.5f, chh = rect.height * 0.62f;
+            float sx2 = nx > 0f ? (rect.width - 12f - cw) / nx : nx < 0f ? (12f - cw) / nx : float.PositiveInfinity;
+            float sy2 = ny > 0f ? (rect.height - 12f - chh) / ny : ny < 0f ? (12f - chh) / ny : float.PositiveInfinity;
             float rim = Mathf.Min(sx2, sy2);
             var nstyle = new GUIStyle(_label) { fontSize = 13, alignment = TextAnchor.MiddleCenter };
             GUI.Label(new Rect(scx + nx * rim - 10f, scy + ny * rim - 10f, 20f, 20f), "N", nstyle);
