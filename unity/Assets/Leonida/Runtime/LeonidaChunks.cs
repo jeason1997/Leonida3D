@@ -128,8 +128,19 @@ namespace Leonida
                     mesh.tangents = tangents;
                 }
 
-                // Do NOT read/write mesh.triangles here: the setter collapses every submesh
-                // into one, which was destroying the [wall, roof] material split.
+                // Mirroring X reverses triangle winding. Flip each submesh separately so the
+                // [wall, roof] material split is preserved (mesh.triangles would collapse it).
+                for (int s = 0; s < mesh.subMeshCount; s++)
+                {
+                    var tris = mesh.GetTriangles(s);
+                    for (int i = 0; i + 2 < tris.Length; i += 3)
+                    {
+                        int tmp = tris[i];
+                        tris[i] = tris[i + 1];
+                        tris[i + 1] = tmp;
+                    }
+                    mesh.SetTriangles(tris, s, false);
+                }
                 mesh.RecalculateBounds();
                 filter.sharedMesh = mesh;
             }
