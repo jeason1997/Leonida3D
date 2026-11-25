@@ -29,18 +29,10 @@ namespace Leonida
             _manifest = manifest;
             _map = Resources.Load<Texture2D>("MapFull");
             _tiles.Clear();
-            if (manifest != null && manifest.minimap != null && manifest.minimap.tiles != null)
-            {
-                foreach (string key in manifest.minimap.tiles)
-                {
-                    var tex = Resources.Load<Texture2D>($"Minimap/mm_{key}");
-                    if (tex != null) _tiles[key] = tex;
-                }
-            }
             if (_cam != null && manifest != null)
             {
                 _radarUI = gameObject.AddComponent<LeonidaRadarUI>();
-                _radarUI.Init(_cam, manifest, _tiles, this);
+                _radarUI.Init(_cam, manifest, null, this);
             }
             if (_map == null)
             {

@@ -17,8 +17,10 @@ namespace Leonida
         readonly List<RawImage> _tiles = new List<RawImage>();
         readonly List<Vector2> _tileMap = new List<Vector2>();
         readonly List<float> _tileSize = new List<float>();
+        readonly List<string> _tileKeys = new List<string>();
 
         const float W = 260f, H = 190f;
+        int _loadsThisFrame;
 
         public void Init(Camera cam, LeonidaManifest m, Dictionary<string, Texture2D> tiles, LeonidaMapUI owner)
         {
@@ -49,19 +51,21 @@ namespace Leonida
             _mapRoot.anchoredPosition = Vector2.zero;
             _mapRoot.sizeDelta = new Vector2(W, H);
 
-            foreach (var kv in tiles)
+            var keys = tiles != null && tiles.Count > 0 ? new List<string>(tiles.Keys) : new List<string>(m.minimap.tiles);
+            foreach (string key in keys)
             {
-                string[] p = kv.Key.Split('_');
+                string[] p = key.Split('_');
                 if (p.Length != 2 || !int.TryParse(p[0], out int i) || !int.TryParse(p[1], out int j)) continue;
-                var tileGo = new GameObject("MM_" + kv.Key);
+                var tileGo = new GameObject("MM_" + key);
                 var rt = tileGo.AddComponent<RectTransform>();
                 rt.SetParent(_mapRoot, false);
                 rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
                 rt.pivot = new Vector2(0.5f, 0.5f);
                 var raw = tileGo.AddComponent<RawImage>();
-                raw.texture = kv.Value;
+                raw.texture = tiles != null && tiles.TryGetValue(key, out var tex) ? tex : null;
                 raw.raycastTarget = false;
                 _tiles.Add(raw);
+                _tileKeys.Add(key);
                 _tileMap.Add(new Vector2(
                     m.west + i * m.chunk + m.chunk * 0.5f,
                     m.north - j * m.chunk - m.chunk * 0.5f));
@@ -114,6 +118,7 @@ namespace Leonida
             float camNorth = -p.z;
 
             float mapAngle = (map != null && !map.RadarFlip) ? -heading : heading;
+            _loadsThisFrame = 0;
             _mapRoot.localRotation = Quaternion.Euler(0f, 0f, mapAngle);
             _mapRoot.sizeDelta = new Vector2(w, h);
 
@@ -123,8 +128,15 @@ namespace Leonida
                 float size = _tileSize[k] / mpp;
                 var rt = _tiles[k].rectTransform;
                 rt.sizeDelta = new Vector2(size, size);
-                rt.anchoredPosition = new Vector2((mapPos.x - p.x) / mpp, (mapPos.y - camNorth) / mpp);
-                _tiles[k].enabled = size > 0.5f;
+                Vector2 anchored = new Vector2((mapPos.x - p.x) / mpp, (mapPos.y - camNorth) / mpp);
+                rt.anchoredPosition = anchored;
+                bool inView = Mathf.Abs(anchored.x) < w * 0.75f && Mathf.Abs(anchored.y) < h * 0.75f;
+                if (inView && _tiles[k].texture == null && _loadsThisFrame < 1)
+                {
+                    _tiles[k].texture = Resources.Load<Texture2D>("Minimap/mm_" + _tileKeys[k]);
+                    _loadsThisFrame++;
+                }
+                _tiles[k].enabled = _tiles[k].texture != null && size > 0.5f;
             }
 
             float hrad = mapAngle * Mathf.Deg2Rad;

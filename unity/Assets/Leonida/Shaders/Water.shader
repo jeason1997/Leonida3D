@@ -11,6 +11,8 @@ Shader "Leonida/Water"
         _Smoothness ("Smoothness", Range(0, 1)) = 0.94
         _SpecPower ("Specular Power", Range(8, 512)) = 220
         _SpecStrength ("Specular Strength", Range(0, 4)) = 1.4
+        _WaveAmp ("Wave Amplitude", Range(0, 2)) = 1
+        _WaveR ("Wave Radius", Float) = 3000
     }
 
     SubShader
@@ -84,6 +86,12 @@ Shader "Leonida/Water"
                 return n;
             }
 
+            float GroundAt(float2 mp, float mapNorth)
+            {
+                float2 uv = float2((mp.x - _HMap.x) / _HMap.z, 1.0 - (_HMap.y - mapNorth) / _HMap.w);
+                return SAMPLE_TEXTURE2D(_HeightTex, sampler_HeightTex, saturate(uv)).r * 200.0 - 100.0;
+            }
+
             half4 frag (Varyings i) : SV_Target
             {
                 float2 mp = i.positionWS.xz;
@@ -98,7 +106,7 @@ Shader "Leonida/Water"
 
                 float wdist = length(_WorldSpaceCameraPos - i.positionWS);
                 float2 slope = (n1.xy + n2.xy) * _NormalStrength * (1.0 - 0.75 * smoothstep(400.0, 3000.0, wdist));
-                float3 N = normalize(float3(slope.x, 1.0, slope.y));
+                float3 N = normalize(i.normalWS + float3(slope.x, 0.0, slope.y));
 
                 float3 V = GetWorldSpaceNormalizeViewDir(i.positionWS);
                 float fresnel = pow(1.0 - saturate(dot(N, V)), 4.0);
@@ -123,7 +131,7 @@ Shader "Leonida/Water"
                 float fn = SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, fuv).x;
                 float2 fuv2 = i.positionWS.xz * 0.11 - _Time.y * float2(0.014, 0.010);
                 float fn2 = SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, fuv2).y;
-                float shore = smoothstep(0.15, 1.2, depth) * (1.0 - smoothstep(1.2, 4.0, depth));
+                float shore = (1.0 - smoothstep(0.0, 1.5, depth)) * step(ground, 0.05);
                 float foam = shore * smoothstep(0.42, 0.72, fn * 0.6 + fn2 * 0.6);
                 foam *= step(ground, 0.05);
                 col = lerp(col, float3(0.93, 0.97, 0.98), foam * 0.55);

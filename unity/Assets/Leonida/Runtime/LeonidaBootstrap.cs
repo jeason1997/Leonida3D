@@ -32,12 +32,6 @@ namespace Leonida
         void Awake()
         {
             _cleanMode = Array.IndexOf(Environment.GetCommandLineArgs(), "-clean") >= 0;
-            bool autoStart = Array.IndexOf(Environment.GetCommandLineArgs(), "-autostart") >= 0;
-            if (!_cleanMode && !autoStart)
-            {
-                var menu = gameObject.AddComponent<LeonidaStartMenu>();
-                menu.Init(this);
-            }
         }
         LeonidaVegetation _veg;
         LeonidaMapUI _mapUi;
@@ -252,7 +246,7 @@ namespace Leonida
             if (GameObject.Find("Ocean") != null) return;
             var go = GameObject.CreatePrimitive(PrimitiveType.Plane);
             go.name = "Ocean";
-            go.transform.position = new Vector3(0f, 0.05f, 0f);
+            go.transform.position = new Vector3(0f, -1.2f, 0f);
             go.transform.localScale = new Vector3(6000f, 1f, 6000f);   // 60 km
             var renderer = go.GetComponent<MeshRenderer>();
             renderer.sharedMaterial = LeonidaMaterials.For("Water");

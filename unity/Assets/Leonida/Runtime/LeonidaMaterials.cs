@@ -184,6 +184,28 @@ namespace Leonida
             if (m.HasProperty("_SpecStrength")) m.SetFloat("_SpecStrength", 0.55f);
             if (m.HasProperty("_NormalStrength")) m.SetFloat("_NormalStrength", 0.35f);
             if (m.HasProperty("_WaveScale")) m.SetFloat("_WaveScale", 0.006f);
+            if (m.HasProperty("_WaveAmp")) m.SetFloat("_WaveAmp", 1f);
+            m.enableInstancing = true;
+            Cache[key] = m;
+            return m;
+        }
+
+        static Material WaterFlat()
+        {
+            const string key = "WaterFlat";
+            if (Cache.TryGetValue(key, out var cached)) return cached;
+            var baseMat = Resources.Load<Material>("Water");
+            Material m;
+            if (baseMat != null) m = new Material(baseMat);
+            else
+            {
+                var shader = Shader.Find("Leonida/Water");
+                m = shader != null ? new Material(shader) : Lit(key, new Color(0.05f, 0.24f, 0.34f), 0.9f);
+            }
+            m.name = key;
+            if (m.HasProperty("_WaveAmp")) m.SetFloat("_WaveAmp", 0f);
+            if (m.HasProperty("_ShallowColor")) m.SetColor("_ShallowColor", new Color(0.13f, 0.60f, 0.66f, 1f));
+            if (m.HasProperty("_DeepColor")) m.SetColor("_DeepColor", new Color(0.02f, 0.17f, 0.27f, 1f));
             m.enableInstancing = true;
             Cache[key] = m;
             return m;
